@@ -19,8 +19,8 @@ conf = adk.Conf(
     # MCU clock frequency in Hz
     MCU_FREQ = 20000000,
     
-    # L 0b11101111 H 0b11010101- 20MHz
-    MCU_LFUSE = 0xef,
-    MCU_HFUSE = 0xd5
+    # L 0b11010111 H 0b11010111- 20MHz
+    MCU_LFUSE = 0xd7,
+    MCU_HFUSE = 0xd7
 
     ).Build()
