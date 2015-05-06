@@ -1,0 +1,26 @@
+# This file is a part of 'hydroponics' project.
+# Copyright (c) 2015, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+
+import adk
+
+conf = adk.Conf(
+    APP_NAME= 'cpu',
+    APP_TYPE = 'app',
+    PLATFORM = 'avr',
+                
+    # MCU code name
+    MCU = 'atmega328',
+    # Programmer type
+    PROGRAMMER = 'avrisp2',
+    # Programmer connection
+    PROGRAMMER_BUS = '/dev/avrisp',
+    # MCU clock frequency in Hz
+    MCU_FREQ = 20000000,
+    
+    # L 0b11101111 H 0b11010101- 20MHz
+    MCU_LFUSE = 0xef,
+    MCU_HFUSE = 0xd5
+
+    ).Build()
