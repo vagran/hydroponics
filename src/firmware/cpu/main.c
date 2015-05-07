@@ -356,17 +356,22 @@ OnButtonLongPressed()
 int
 main(void)
 {
-    AdcInit();
-    ClockInit();
-    TempInit();
-    BtnInit();
-
-    sei();
+    AVR_BIT_SET8(DDRB, 1);
+    AVR_BIT_SET8(PORTB, 1);
     while (1) {
-        if (!AdcSleepDisabled()) {
-            AVR_BIT_SET8(MCUCR, SE);
-            __asm__ volatile ("sleep");
-            AVR_BIT_CLR8(MCUCR, SE);
-        }
-    };
+
+    }
+//    AdcInit();
+//    ClockInit();
+//    TempInit();
+//    BtnInit();
+//
+//    sei();
+//    while (1) {
+//        if (!AdcSleepDisabled()) {
+//            AVR_BIT_SET8(MCUCR, SE);
+//            __asm__ volatile ("sleep");
+//            AVR_BIT_CLR8(MCUCR, SE);
+//        }
+//    };
 }

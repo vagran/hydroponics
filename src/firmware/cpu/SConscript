@@ -11,7 +11,7 @@ conf = adk.Conf(
     PLATFORM = 'avr',
                 
     # MCU code name
-    MCU = 'atmega328',
+    MCU = 'atmega328p',
     # Programmer type
     PROGRAMMER = 'avrisp2',
     # Programmer connection
