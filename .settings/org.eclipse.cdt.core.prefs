@@ -1,0 +1,12 @@
+eclipse.preferences.version=1
+environment/project/0.2120724436/ADK_BUILD_TYPE/delimiter=\:
+environment/project/0.2120724436/ADK_BUILD_TYPE/operation=replace
+environment/project/0.2120724436/ADK_BUILD_TYPE/value=debug
+environment/project/0.2120724436/ADK_PREFIX/delimiter=\:
+environment/project/0.2120724436/ADK_PREFIX/operation=replace
+environment/project/0.2120724436/ADK_PREFIX/value=${ADK_PREFIX}
+environment/project/0.2120724436/ADK_ROOT/delimiter=\:
+environment/project/0.2120724436/ADK_ROOT/operation=replace
+environment/project/0.2120724436/ADK_ROOT/value=${ADK_ROOT}
+environment/project/0.2120724436/append=true
+environment/project/0.2120724436/appendContributed=true
