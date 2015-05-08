@@ -15,6 +15,13 @@ OnButtonPressed();
 static inline void
 OnButtonLongPressed();
 
+/** Invoked when rotary encoder rotated on one tick.
+ *
+ * @param dir CW direction when TRUE, CCW when FALSE.
+ */
+static void
+OnRotEncTick(u8 dir);
+
 /** Global bit-field variables for saving RAM space. Should be accessed with
  * interrupts disabled.
  */
@@ -285,6 +292,87 @@ BtnInit()
 }
 
 /* ****************************************************************************/
+/* Rotary encoder.
+ * Suppress jitter and decode rotation direction.
+ */
+
+#define ROT_ENC_JITTER_DELAY    TASK_DELAY_MS(150)
+
+struct {
+    /** Current filtered state of line A. */
+    u8 curStateA:1,
+    /** Current filtered state of line B. */
+       curStateB:1;
+} g_re;
+
+/** Check if line A has state changed.
+ *
+ * @return TRUE if state changed.
+ */
+static inline u8
+RotEncCheckA()
+{
+    static u8 cnt;
+    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
+    if (pin != g_re.curStateA) {
+        if (cnt >= ROT_ENC_JITTER_DELAY) {
+            cnt = 0;
+            g_re.curStateA = pin;
+            return TRUE;
+        }
+        cnt++;
+        return FALSE;
+    }
+    cnt = 0;
+    return FALSE;
+}
+
+/** Check if line B has state changed.
+ *
+ * @return TRUE if state changed.
+ */
+static inline u8
+RotEncCheckB()
+{
+    static u8 cnt;
+    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
+    if (pin != g_re.curStateB) {
+        if (cnt >= ROT_ENC_JITTER_DELAY) {
+            cnt = 0;
+            g_re.curStateB = pin;
+            return TRUE;
+        }
+        cnt++;
+        return FALSE;
+    }
+    cnt = 0;
+    return FALSE;
+}
+
+static u16
+RotEncPoll()
+{
+    if (RotEncCheckA()) {
+        OnRotEncTick(g_re.curStateA != g_re.curStateB);
+    }
+    if (RotEncCheckB()) {
+        OnRotEncTick(g_re.curStateA == g_re.curStateB);
+    }
+    return 1;
+}
+
+static inline void
+RotEncInit()
+{
+    /* Enable pull-up resistor on signal lines. */
+    AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_A_PORT), ROT_ENC_A_PIN);
+    AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_B_PORT), ROT_ENC_B_PIN);
+    g_re.curStateA = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
+    g_re.curStateB = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
+    ScheduleTask(RotEncPoll, 1);
+}
+
+/* ****************************************************************************/
 /* Level gauge. */
 
 static void
@@ -294,7 +382,7 @@ LvlGaugeStart();
 static void
 OnLvlGaugeComplete(u16 value __UNUSED)
 {
-    LvlGaugeStart();
+    LvlGaugeStart();//XXX
 }
 
 ISR(TIMER1_OVF_vect)
@@ -352,6 +440,7 @@ LvlGaugeStart()
     /* Reset pending counter interrupts if any. */
     TIFR1 = _BV(ICF1) | _BV(TOV1);
 
+    /* Clear trigger line. */
     AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
 
     SREG = sreg;
@@ -386,6 +475,12 @@ OnButtonLongPressed()
     //XXX
 }
 
+void
+OnRotEncTick(u8 dir __UNUSED)
+{
+    //XXX
+}
+
 u16
 Test()
 {
@@ -398,6 +493,8 @@ main(void)
 {
     ClockInit();
     LvlGaugeInit();
+    BtnInit();
+    RotEncInit();
 
     //XXX
     DDRB |= 0x1e;
