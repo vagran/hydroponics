@@ -18,6 +18,14 @@ OnButtonPressed();
 static inline void
 OnButtonLongPressed();
 
+/** Global bit-field variables for saving RAM space. Should be accessed with
+ * interrupts disabled.
+ */
+static struct {
+    /** Measurement in progress. */
+    u8 lvlGaugeActive:1;
+} g;
+
 /* ****************************************************************************/
 /* System clock. */
 
@@ -296,6 +304,79 @@ BtnInit()
 }
 
 /* ****************************************************************************/
+/* Level gauge. */
+
+static void
+LvlGaugeStart();
+
+/** @param value xxx */
+static void
+OnLvlGaugeComplete(u16 value __UNUSED)
+{
+    LvlGaugeStart();
+}
+
+ISR(TIMER1_OVF_vect)
+{
+    if (!g.lvlGaugeActive) {
+        /* No active measurement. */
+        return;
+    }
+    g.lvlGaugeActive = 0;
+    /* Indicate out-of-range. */
+    OnLvlGaugeComplete(0xffff);
+}
+
+ISR(TIMER1_CAPT_vect)
+{
+    if (!g.lvlGaugeActive) {
+        /* No active measurement. */
+        return;
+    }
+    g.lvlGaugeActive = 0;
+    OnLvlGaugeComplete(TCNT1);
+}
+
+static inline void
+LvlGaugeInit()
+{
+    /* Running at system clock frequency, normal mode. Input capture for falling
+     * edge.
+     */
+    TIMSK1 = _BV(ICIE1) | _BV(TOIE1);
+    AVR_BIT_SET8(AVR_REG_DDR(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
+}
+
+/** Start level measurement. */
+static void
+LvlGaugeStart()
+{
+    u8 sreg = SREG;
+    cli();
+
+    if (g.lvlGaugeActive) {
+        /* Measurement in progress. Drop the new request. */
+        return;
+    }
+    g.lvlGaugeActive = 1;
+
+    /* Skip previous echo if active. */
+    while (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
+    /* Set trigger line and poll for echo start. */
+    AVR_BIT_SET8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
+    while (!AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
+
+    /* Echo pulse started. Start counting. */
+    TCNT1 = 0;
+    /* Reset pending counter interrupts if any. */
+    TIFR1 = _BV(ICF1) | _BV(TOV1);
+
+    AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
+
+    SREG = sreg;
+}
+
+/* ****************************************************************************/
 /* XXX */
 
 static inline void
@@ -356,10 +437,19 @@ OnButtonLongPressed()
 int
 main(void)
 {
-    AVR_BIT_SET8(DDRB, 1);
-    AVR_BIT_SET8(PORTB, 1);
-    while (1) {
+    LvlGaugeInit();
 
+    //XXX
+//    DDRB |= 0x1e;
+//    PORTB |= 0x1e;
+    sei();
+    LvlGaugeStart();//XXX
+    while (1) {
+        if (!AdcSleepDisabled()) {
+            AVR_BIT_SET8(MCUCR, SE);
+            __asm__ volatile ("sleep");
+            AVR_BIT_CLR8(MCUCR, SE);
+        }
     }
 //    AdcInit();
 //    ClockInit();

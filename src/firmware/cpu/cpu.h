@@ -12,6 +12,15 @@
 /** Pin for button. */
 #define BUTTON_PIN    3
 
+/** Port for level gauge trigger line. */
+#define LVL_GAUGE_TRIG_PORT     D
+/** Pin for level gauge trigger line. */
+#define LVL_GAUGE_TRIG_PIN      7
+/** Port for level gauge echo line. Limited to input capture unit pins. */
+#define LVL_GAUGE_ECHO_PORT     B
+/** Pin for level gauge echo line. */
+#define LVL_GAUGE_ECHO_PIN      0
+
 /** Frequency of clock counter (TCNT1). */
 #define CLOCK_FREQ          (ADK_MCU_FREQ / 8)
 /** TOP value for clock counter. */
