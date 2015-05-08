@@ -8,9 +8,18 @@
 
 //XXX revise
 /** Port for button. */
-#define BUTTON_PORT   B
+#define BUTTON_PORT   C
 /** Pin for button. */
-#define BUTTON_PIN    3
+#define BUTTON_PIN    2
+
+/** Port for rotary encoder line A. */
+#define ROT_ENC_A_PORT   C
+/** Pin for rotary encoder line A. */
+#define ROT_ENC_A_PIN    0
+/** Port for rotary encoder line B. */
+#define ROT_ENC_B_PORT   C
+/** Pin for rotary encoder line B. */
+#define ROT_ENC_B_PIN    1
 
 /** Port for level gauge trigger line. */
 #define LVL_GAUGE_TRIG_PORT     D

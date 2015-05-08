@@ -24,8 +24,9 @@ static struct {
 } g;
 
 /* ****************************************************************************/
-/* System clock. */
+/* System clock and scheduler. */
 
+/** System clock ticks. Use @ref GetClockTicks() to get the current value. */
 static u32 g_clockTicks = 0;
 
 typedef struct {
@@ -35,6 +36,8 @@ typedef struct {
 } Task;
 
 static Task g_tasks[MAX_TASKS];
+/** Number of scheduler ticks passed from previous tasks run. */
+static u16 g_schedulerTicks;
 
 TaskId
 ScheduleTask(TaskHandler handler, u16 delay)
@@ -62,20 +65,48 @@ UnscheduleTask(TaskId id)
     SREG = sreg;
 }
 
-static inline void
-ProcessTaskQueue()
+/** Process scheduled tasks.
+ * @return TRUE if needs additional run.
+ */
+static inline u8
+SchedulerPoll()
 {
+    cli();
+    u16 ticks = g_schedulerTicks;
+    g_schedulerTicks = 0;
+    sei();
+
+    if (ticks == 0) {
+        return FALSE;
+    }
+
+    u8 ret = FALSE;
+    u8 pendingSkipped = FALSE;
     for (TaskId id = 0; id < MAX_TASKS; id++) {
         Task *task = &g_tasks[id];
+
         if (task->delay != 0) {
-            task->delay--;
-            if (task->delay == 0) {
-                /* Temporarily reserve this task entry. */
-                task->delay = 1;
+            if (task->delay <= ticks) {
+                /* Preserve delay during the call to reserve this entry. */
                 task->delay = task->handler();
+                if (task->delay != 0) {
+                    pendingSkipped = TRUE;
+                }
+                /* Update ticks counter after each task run. */
+                cli();
+                if (pendingSkipped && g_schedulerTicks != 0) {
+                    ret = TRUE;
+                }
+                ticks += g_schedulerTicks;
+                g_schedulerTicks = 0;
+                sei();
+            } else {
+                task->delay -= ticks;
+                pendingSkipped = TRUE;
             }
         }
     }
+    return ret;
 }
 
 static inline u32
@@ -89,16 +120,10 @@ GetClockTicks()
 }
 
 /** Clock ticks occur with TICK_FREQ frequency. */
-static inline void
-OnClockTick()
-{
-    g_clockTicks++;
-    ProcessTaskQueue();
-}
-
 ISR(TIMER0_OVF_vect)
 {
-    OnClockTick();
+    g_clockTicks++;
+    g_schedulerTicks++;
 }
 
 static inline void
@@ -131,11 +156,7 @@ static u8 g_adcPending, g_adcCurrent, g_adcSkip;
 static inline u8
 AdcSleepDisabled()
 {
-    u8 sreg = SREG;
-    cli();
-    u8 result = g_adcCurrent != 0 || g_adcPending != 0;
-    SREG = sreg;
-    return result;
+    return g_adcCurrent != 0 || g_adcPending != 0;
 }
 
 static inline void
@@ -169,7 +190,7 @@ ISR(ADC_vect)
     } else {
         OnAdcResult(g_adcCurrent, (u16)ADCL | ((u16)ADCH << 8));
         g_adcCurrent = g_adcPending;
-        g_adcPending = 0;
+        g_adcPending = FALSE;
     }
     if (g_adcCurrent) {
         _StartConvertion(g_adcCurrent);
@@ -282,7 +303,7 @@ ISR(TIMER1_OVF_vect)
         /* No active measurement. */
         return;
     }
-    g.lvlGaugeActive = 0;
+    g.lvlGaugeActive = FALSE;
     /* Indicate out-of-range. */
     OnLvlGaugeComplete(0xffff);
 }
@@ -293,7 +314,7 @@ ISR(TIMER1_CAPT_vect)
         /* No active measurement. */
         return;
     }
-    g.lvlGaugeActive = 0;
+    g.lvlGaugeActive = FALSE;
     OnLvlGaugeComplete(TCNT1);
 }
 
@@ -318,7 +339,7 @@ LvlGaugeStart()
         /* Measurement in progress. Drop the new request. */
         return;
     }
-    g.lvlGaugeActive = 1;
+    g.lvlGaugeActive = TRUE;
 
     /* Skip previous echo if active. */
     while (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
@@ -386,7 +407,10 @@ main(void)
     sei();
     LvlGaugeStart();//XXX
     while (1) {
-        if (!AdcSleepDisabled()) {
+        u8 noSleep = SchedulerPoll();
+        //XXX rest polls here
+        /* Assuming ADC conversion can not be started from interrupt. */
+        if (!noSleep && !AdcSleepDisabled()) {
             AVR_BIT_SET8(MCUCR, SE);
             __asm__ volatile ("sleep");
             AVR_BIT_CLR8(MCUCR, SE);
