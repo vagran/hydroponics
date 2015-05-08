@@ -375,15 +375,11 @@ RotEncInit()
 /* ****************************************************************************/
 /* Level gauge. */
 
+/** Invoked when measurement complete.
+ * @param value xxx
+ */
 static void
-LvlGaugeStart();
-
-/** @param value xxx */
-static void
-OnLvlGaugeComplete(u16 value __UNUSED)
-{
-    LvlGaugeStart();//XXX
-}
+OnLvlGaugeResult(u16 value);
 
 ISR(TIMER1_OVF_vect)
 {
@@ -393,7 +389,7 @@ ISR(TIMER1_OVF_vect)
     }
     g.lvlGaugeActive = FALSE;
     /* Indicate out-of-range. */
-    OnLvlGaugeComplete(0xffff);
+    OnLvlGaugeResult(0xffff);
 }
 
 ISR(TIMER1_CAPT_vect)
@@ -403,7 +399,7 @@ ISR(TIMER1_CAPT_vect)
         return;
     }
     g.lvlGaugeActive = FALSE;
-    OnLvlGaugeComplete(TCNT1);
+    OnLvlGaugeResult(TCNT1);
 }
 
 static inline void
@@ -414,6 +410,13 @@ LvlGaugeInit()
      */
     TIMSK1 = _BV(ICIE1) | _BV(TOIE1);
     AVR_BIT_SET8(AVR_REG_DDR(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
+
+    /* Workaround for strange behaviour when echo output is initially high
+     * forever. Make one trigger pulse.
+     */
+    AVR_BIT_SET8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
+    _delay_us(10);
+    AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
 }
 
 /** Start level measurement. */
@@ -463,6 +466,12 @@ OnAdcResult(u8 type __UNUSED, u16 value __UNUSED)
 //    }
 }
 
+static void
+OnLvlGaugeResult(u16 value __UNUSED)
+{
+    //LvlGaugeStart();//XXX
+}
+
 static inline void
 OnButtonPressed()
 {
@@ -485,7 +494,8 @@ u16
 Test()
 {
     PINB = 0x10;
-    return TASK_DELAY_MS(1000);
+    LvlGaugeStart();//XXX
+    return TASK_DELAY_MS(500);
 }
 
 int
@@ -499,10 +509,9 @@ main(void)
     //XXX
     DDRB |= 0x1e;
     PORTB |= 0x1e;
-    ScheduleTask(Test, TASK_DELAY_MS(1000));
+    ScheduleTask(Test, TASK_DELAY_MS(500));
 
     sei();
-    LvlGaugeStart();//XXX
     while (1) {
         u8 noSleep = SchedulerPoll();
         //XXX rest polls here
