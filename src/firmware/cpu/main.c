@@ -7,9 +7,6 @@
 #include "cpu.h"
 
 static inline void
-OnClockMinute();
-
-static inline void
 OnAdcResult(u8 type, u16 value);
 
 static inline void
@@ -30,9 +27,6 @@ static struct {
 /* System clock. */
 
 static u32 g_clockTicks = 0;
-
-/** Current hour, minute, second and day of week. */
-static u8 g_clockHour, g_clockMin, g_clockSec, g_clockDow;
 
 typedef struct {
     /** Non-zero if scheduled. */
@@ -94,46 +88,15 @@ GetClockTicks()
     return ret;
 }
 
-/** Called on each second. */
-static inline void
-OnClockSecond()
-{
-    g_clockSec++;
-    if (g_clockSec < 60) {
-        return;
-    }
-    g_clockSec = 0;
-    g_clockMin++;
-    if (g_clockMin >= 60) {
-        g_clockMin = 0;
-        g_clockHour++;
-        if (g_clockHour >= 24) {
-            g_clockHour = 0;
-            g_clockDow++;
-            if (g_clockDow >= 7) {
-                g_clockDow = 0;
-            }
-        }
-    }
-    OnClockMinute();
-}
-
 /** Clock ticks occur with TICK_FREQ frequency. */
 static inline void
 OnClockTick()
 {
-    static u8 divisor = TICK_FREQ;
-
     g_clockTicks++;
-    divisor--;
-    if (divisor == 0) {
-        divisor = TICK_FREQ;
-        OnClockSecond();
-    }
     ProcessTaskQueue();
 }
 
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER0_OVF_vect)
 {
     OnClockTick();
 }
@@ -141,12 +104,9 @@ ISR(TIMER1_COMPA_vect)
 static inline void
 ClockInit()
 {
-    /* CLK / 8
-     * WGM = 0100 (CTC)
-     */
-    TCCR1B = _BV(CS11) | _BV(WGM12);
-    OCR1A = CLOCK_MAX_VALUE;
-    TIMSK1 = _BV(OCIE1A);
+    /* CLK / 1024, Normal mode. */
+    TCCR0B = _BV(CS02) | _BV(CS00);
+    TIMSK0 = _BV(TOIE0);
 }
 
 /* ****************************************************************************/
@@ -394,35 +354,6 @@ OnAdcResult(u8 type __UNUSED, u16 value __UNUSED)
 }
 
 static inline void
-OnClockMinute()
-{
-    //XXX
-//    g_temp.pending = 1;
-//    AdcStart(ADC_IN_BATTERY);
-//    if (g_wat.lastLaunch != 0xffff) {
-//        g_wat.lastLaunch++;
-//    }
-//
-//    /* Check if launch should be initiated. */
-//    if ((g_wat.setDowMask & ((u8)1 << g_clockDow)) == 0) {
-//        return;
-//    }
-//    if (g_wat.setHour != g_clockHour || g_wat.setMin != g_clockMin) {
-//        return;
-//    }
-//
-//    /* Skip blocked launch. */
-//    if (g_wat.blocked) {
-//        g_wat.blocked = 0;
-//        g_wat.lastLaunch = 0;
-//        g_temp.accumulated = 0;
-//        return;
-//    }
-//
-//    WatLaunch(0);
-}
-
-static inline void
 OnButtonPressed()
 {
     //XXX
@@ -434,14 +365,24 @@ OnButtonLongPressed()
     //XXX
 }
 
+u16
+Test()
+{
+    PINB = 0x10;
+    return TASK_DELAY_MS(1000);
+}
+
 int
 main(void)
 {
+    ClockInit();
     LvlGaugeInit();
 
     //XXX
-//    DDRB |= 0x1e;
-//    PORTB |= 0x1e;
+    DDRB |= 0x1e;
+    PORTB |= 0x1e;
+    ScheduleTask(Test, TASK_DELAY_MS(1000));
+
     sei();
     LvlGaugeStart();//XXX
     while (1) {

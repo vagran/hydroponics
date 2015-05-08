@@ -21,15 +21,15 @@
 /** Pin for level gauge echo line. */
 #define LVL_GAUGE_ECHO_PIN      0
 
-/** Frequency of clock counter (TCNT1). */
-#define CLOCK_FREQ          (ADK_MCU_FREQ / 8)
-/** TOP value for clock counter. */
-#define CLOCK_MAX_VALUE     62499
-
 /** Clock ticks frequency. */
-#define TICK_FREQ       40
+#define TICK_FREQ       (ADK_MCU_FREQ / 1024 / 256)
 /** Clock tick period in ms. */
 #define TICK_PERIOD_MS  (1000 / TICK_FREQ)
+
+/** Convert ticks to miliseconds. */
+#define TICK_TO_MS(__t) ((u32)(__t) * 1024 * 256 / (ADK_MCU_FREQ / 1000))
+/** Convert ticks to seconds. */
+#define TICK_TO_S(__t) ((u32)(__t) * 1024 * 256 / ADK_MCU_FREQ)
 
 /** Scheduled task handler. Returns non-zero delay to reschedule task with or
  * zero to terminate the task.
@@ -42,12 +42,24 @@ typedef u8 TaskId;
 #define MAX_TASKS       10
 #define INVALID_TASK    0xff
 
-#define TASK_DELAY_MS(ms)   (ms / TICK_PERIOD_MS)
-#define TASK_DELAY_S(s)     (s * TICK_FREQ)
+/* Minimize significant bits loss in the calculations below by using proper
+ * calculations sequence.
+ */
+#define TASK_DELAY_MS(__ms) \
+    ((u16)((u32)(ADK_MCU_FREQ / 1000) * (__ms) / ((u32)1024 * 256)))
+#define TASK_DELAY_S(__s) \
+    ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
+/** Schedule task for deferred execution.
+ *
+ * @return Task ID. @ref INVALID_TASK if task scheduling failed.
+ */
 TaskId
 ScheduleTask(TaskHandler handler, u16 delay);
 
+/** Cancel previously scheduled task. Use only for periodic tasks otherwise
+ * race may occur (unscheduling other task which  occupied the same slot).
+ */
 void
 UnscheduleTask(TaskId id);
 
