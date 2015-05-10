@@ -20,14 +20,18 @@ OnButtonLongPressed();
  * @param dir CW direction when TRUE, CCW when FALSE.
  */
 static void
-OnRotEncTick(u8 dir);
+OnRotEncClick(u8 dir);
 
 /** Global bit-field variables for saving RAM space. Should be accessed with
  * interrupts disabled.
  */
 static struct {
+    /** Any interrupt can set this flag to indicate that scheduler polling round
+     * should be executed.
+     */
+    u8 pollPending:1,
     /** Measurement in progress. */
-    u8 lvlGaugeActive:1;
+       lvlGaugeActive:1;
 } g;
 
 /* ****************************************************************************/
@@ -72,10 +76,8 @@ UnscheduleTask(TaskId id)
     SREG = sreg;
 }
 
-/** Process scheduled tasks.
- * @return TRUE if needs additional run.
- */
-static inline u8
+/** Process scheduled tasks. */
+static inline void
 SchedulerPoll()
 {
     cli();
@@ -84,10 +86,9 @@ SchedulerPoll()
     sei();
 
     if (ticks == 0) {
-        return FALSE;
+        return;
     }
 
-    u8 ret = FALSE;
     u8 pendingSkipped = FALSE;
     for (TaskId id = 0; id < MAX_TASKS; id++) {
         Task *task = &g_tasks[id];
@@ -102,7 +103,8 @@ SchedulerPoll()
                 /* Update ticks counter after each task run. */
                 cli();
                 if (pendingSkipped && g_schedulerTicks != 0) {
-                    ret = TRUE;
+                    /* Schedule additional round instantly. */
+                    g.pollPending = TRUE;
                 }
                 ticks += g_schedulerTicks;
                 g_schedulerTicks = 0;
@@ -113,7 +115,6 @@ SchedulerPoll()
             }
         }
     }
-    return ret;
 }
 
 static inline u32
@@ -160,6 +161,9 @@ AdcInit()
 
 static u8 g_adcPending, g_adcCurrent, g_adcSkip;
 
+/** Prevent MCU from sleeping when ADC conversion in progress (since it will
+ * probably stop I/O clock and will fail the conversion).
+ */
 static inline u8
 AdcSleepDisabled()
 {
@@ -292,84 +296,150 @@ BtnInit()
 }
 
 /* ****************************************************************************/
-/* Rotary encoder.
- * Suppress jitter and decode rotation direction.
- */
+/* Rotary encoder. */
 
-#define ROT_ENC_JITTER_DELAY    TASK_DELAY_MS(150)
+/** Anti-jittering delay in timer 0 ticks. */
+#define ROT_ENC_JITTER_DELAY    8
 
-struct {
+static struct {
+    /** Rotary encoder steps counter. Incremented or decremented after each
+     * step depending on rotation direction. When full click is rotated the
+     * counter is checked. One click is four steps. In case of half-click
+     * bidirectional rotation or any wrong signaling the click is not accounted.
+     */
+    i8 stepCount;
     /** Current filtered state of line A. */
-    u8 curStateA:1,
+    u8 curA:1,
     /** Current filtered state of line B. */
-       curStateB:1;
+       curB:1,
+    /** Line A change pending. */
+       pendingA:1,
+   /** Line B change pending. */
+       pendingB:1,
+    /** Pending lines check in poll function. */
+       linesCheckPending:1;
 } g_re;
 
-/** Check if line A has state changed.
- *
- * @return TRUE if state changed.
- */
-static inline u8
-RotEncCheckA()
+/** Check if full click performed. */
+static void
+RotEncCheckClick()
 {
-    static u8 cnt;
+    if (g_re.curA && g_re.curB) {
+        /* Stable position between clicks. Check if full click performed. */
+        i8 dir;
+        if (g_re.stepCount >= 4) {
+            dir = 1;
+        } else if (g_re.stepCount <= -4) {
+            dir = -1;
+        } else {
+            dir = 0;
+        }
+        g_re.stepCount = 0;
+        if (dir != 0) {
+            OnRotEncClick(dir > 0);
+        }
+    }
+}
+
+/** Filter jittering on line A. */
+ISR(TIMER0_COMPA_vect)
+{
     u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
-    if (pin != g_re.curStateA) {
-        if (cnt >= ROT_ENC_JITTER_DELAY) {
-            cnt = 0;
-            g_re.curStateA = pin;
-            return TRUE;
-        }
-        cnt++;
-        return FALSE;
+    if (pin != g_re.curA) {
+        g_re.curA = pin;
+        g_re.stepCount += pin != g_re.curB ? 1 : -1;
+        RotEncCheckClick();
     }
-    cnt = 0;
-    return FALSE;
+    AVR_BIT_CLR8(TIMSK0, OCIE0A);
+    g_re.pendingA = FALSE;
 }
 
-/** Check if line B has state changed.
- *
- * @return TRUE if state changed.
- */
-static inline u8
-RotEncCheckB()
+/** Filter jittering on line B. */
+ISR(TIMER0_COMPB_vect)
 {
-    static u8 cnt;
     u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
-    if (pin != g_re.curStateB) {
-        if (cnt >= ROT_ENC_JITTER_DELAY) {
-            cnt = 0;
-            g_re.curStateB = pin;
-            return TRUE;
-        }
-        cnt++;
-        return FALSE;
+    if (pin != g_re.curB) {
+        g_re.curB = pin;
+        g_re.stepCount += pin == g_re.curA ? 1 : -1;
+        RotEncCheckClick();
     }
-    cnt = 0;
-    return FALSE;
+    AVR_BIT_CLR8(TIMSK0, OCIE0B);
+    g_re.pendingB = FALSE;
 }
 
-static u16
+static void
+RotEncCheckLines()
+{
+    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
+    if (pin != g_re.curA) {
+        if (!g_re.pendingA) {
+            /* Schedule anti-jittering delay. */
+            OCR0A = TCNT0 + ROT_ENC_JITTER_DELAY;
+            TIFR0 = _BV(OCF0A);
+            AVR_BIT_SET8(TIMSK0, OCIE0A);
+            g_re.pendingA = TRUE;
+        }
+    } else {
+        g_re.pendingA = FALSE;
+        AVR_BIT_CLR8(TIMSK0, OCIE0A);
+    }
+
+    pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
+    if (pin != g_re.curB) {
+        if (!g_re.pendingB) {
+            /* Schedule anti-jittering delay. */
+            OCR0B = TCNT0 + ROT_ENC_JITTER_DELAY;
+            TIFR0 = _BV(OCF0B);
+            AVR_BIT_SET8(TIMSK0, OCIE0B);
+            g_re.pendingB = TRUE;
+        }
+    } else {
+        g_re.pendingB = FALSE;
+        AVR_BIT_CLR8(TIMSK0, OCIE0B);
+    }
+}
+
+static inline void
+HandleRotEncInterrupt()
+{
+    RotEncCheckLines();
+    /* Ensure line state is not missed while processing the interrupt. */
+    g_re.linesCheckPending = TRUE;
+    g.pollPending = TRUE;
+}
+
+// May be used also for other events.
+ISR(PCINT1_vect)
+{
+    HandleRotEncInterrupt();
+}
+
+static inline void
 RotEncPoll()
 {
-    if (RotEncCheckA()) {
-        OnRotEncTick(g_re.curStateA != g_re.curStateB);
+    cli();
+    if (g_re.linesCheckPending) {
+        RotEncCheckLines();
+        g_re.linesCheckPending = FALSE;
     }
-    if (RotEncCheckB()) {
-        OnRotEncTick(g_re.curStateA == g_re.curStateB);
-    }
-    return 1;
+    sei();
 }
 
 static inline void
 RotEncInit()
 {
+    /* Lines initial state is high since RE has both lines open in stable
+     * position between clicks.
+     */
+    g_re.curA = 1;
+    g_re.curB = 1;
     /* Enable pull-up resistor on signal lines. */
     AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_A_PORT), ROT_ENC_A_PIN);
     AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_B_PORT), ROT_ENC_B_PIN);
-    g_re.curStateA = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
-    g_re.curStateB = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
-    ScheduleTask(RotEncPoll, 1);
+    /* Use pin-change interrupts for rotary encoder processing. */
+    AVR_BIT_SET8(PCICR, PCIE1);
+    AVR_BIT_SET8(PCMSK1, PCINT8);
+    AVR_BIT_SET8(PCMSK1, PCINT9);
 }
 
 /* ****************************************************************************/
@@ -485,9 +555,21 @@ OnButtonLongPressed()
 }
 
 void
-OnRotEncTick(u8 dir __UNUSED)
+OnRotEncClick(u8 dir __UNUSED)
 {
-    //XXX
+    u8 mask = PORTB & 0x1e;
+    if (dir) {
+        mask = (mask >> 1) & 0x1e;
+        if (mask == 0) {
+            mask = 0x10;
+        }
+    } else {
+        mask = (mask << 1) & 0x1e;
+        if (mask == 0) {
+            mask = 0x2;
+        }
+    }
+    PORTB = (PORTB & ~0x1e) | mask;
 }
 
 u16
@@ -508,31 +590,22 @@ main(void)
 
     //XXX
     DDRB |= 0x1e;
-    PORTB |= 0x1e;
-    ScheduleTask(Test, TASK_DELAY_MS(500));
+    PORTB |= 0x2;
+    //ScheduleTask(Test, TASK_DELAY_MS(500));
 
-    sei();
     while (1) {
-        u8 noSleep = SchedulerPoll();
-        //XXX rest polls here
-        /* Assuming ADC conversion can not be started from interrupt. */
-        if (!noSleep && !AdcSleepDisabled()) {
+        g.pollPending = FALSE;
+        sei();
+
+        SchedulerPoll();
+        RotEncPoll();
+
+        cli();
+        if (!g.pollPending && !AdcSleepDisabled()) {
             AVR_BIT_SET8(MCUCR, SE);
-            __asm__ volatile ("sleep");
+            __asm__ volatile ("sei; sleep");
             AVR_BIT_CLR8(MCUCR, SE);
+            cli();
         }
     }
-//    AdcInit();
-//    ClockInit();
-//    TempInit();
-//    BtnInit();
-//
-//    sei();
-//    while (1) {
-//        if (!AdcSleepDisabled()) {
-//            AVR_BIT_SET8(MCUCR, SE);
-//            __asm__ volatile ("sleep");
-//            AVR_BIT_CLR8(MCUCR, SE);
-//        }
-//    };
 }
