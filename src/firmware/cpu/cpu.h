@@ -30,6 +30,27 @@
 /** Pin for level gauge echo line. */
 #define LVL_GAUGE_ECHO_PIN      0
 
+/** Port for the first PWM channel. */
+#define PWM1_PORT               B
+/** Pin for the first PWM channel. */
+#define PWM1_PIN                3
+/** Inverse output for the first PWM channel when TRUE. */
+#define PWM1_INVERSE            FALSE
+
+/** Port for the second PWM channel. */
+#define PWM2_PORT               D
+/** Pin for the second PWM channel. */
+#define PWM2_PIN                3
+/** Inverse output for the second PWM channel when TRUE. */
+#define PWM2_INVERSE            FALSE
+
+/** Port for the third (low frequency) PWM channel. */
+#define PWM3_PORT               D
+/** Pin for the third (low frequency) PWM channel. */
+#define PWM3_PIN                4
+/** Inverse output for the third (low frequency) PWM channel when TRUE. */
+#define PWM3_INVERSE            TRUE
+
 /** Clock ticks frequency. */
 #define TICK_FREQ       (ADK_MCU_FREQ / 1024 / 256)
 /** Clock tick period in ms. */
@@ -61,15 +82,16 @@ typedef u8 TaskId;
 
 /** Schedule task for deferred execution.
  *
- * @return Task ID. @ref INVALID_TASK if task scheduling failed.
+ * @return TRUE if scheduled, FALSE if failed.
  */
-TaskId
+u8
 ScheduleTask(TaskHandler handler, u16 delay);
 
-/** Cancel previously scheduled task. Use only for periodic tasks otherwise
- * race may occur (unscheduling other task which  occupied the same slot).
+/** Cancel previously scheduled task.
+ *
+ * @return TRUE if unscheduled, FALSE if already terminated.
  */
-void
-UnscheduleTask(TaskId id);
+u8
+UnscheduleTask(TaskHandler handler);
 
 #endif /* CPU_H_ */

@@ -50,7 +50,7 @@ static Task g_tasks[MAX_TASKS];
 /** Number of scheduler ticks passed from previous tasks run. */
 static u16 g_schedulerTicks;
 
-TaskId
+u8
 ScheduleTask(TaskHandler handler, u16 delay)
 {
     u8 sreg = SREG;
@@ -60,20 +60,27 @@ ScheduleTask(TaskHandler handler, u16 delay)
             g_tasks[id].delay = delay;
             g_tasks[id].handler = handler;
             SREG = sreg;
-            return id;
+            return TRUE;
         }
     }
     SREG = sreg;
-    return INVALID_TASK;
+    return FALSE;
 }
 
-void
-UnscheduleTask(TaskId id)
+u8
+UnscheduleTask(TaskHandler handler)
 {
     u8 sreg = SREG;
     cli();
-    g_tasks[id].delay = 0;
+    for (TaskId id = 0; id < MAX_TASKS; id++) {
+        if (g_tasks[id].handler == handler) {
+            g_tasks[id].delay = 0;
+            SREG = sreg;
+            return TRUE;
+        }
+    }
     SREG = sreg;
+    return FALSE;
 }
 
 /** Process scheduled tasks. */
@@ -132,6 +139,7 @@ ISR(TIMER0_OVF_vect)
 {
     g_clockTicks++;
     g_schedulerTicks++;
+    g.pollPending = TRUE;
 }
 
 static inline void
@@ -520,6 +528,119 @@ LvlGaugeStart()
 }
 
 /* ****************************************************************************/
+/* PWM signals generator. */
+
+static u8 pwm3Value;
+
+ISR(TIMER2_OVF_vect)
+{
+
+#   define PWM3_CNT_BITS    6
+#   define PWM3_CNT_MAX     ((1 << PWM3_CNT_BITS) - 1)
+
+    static struct {
+        /* Current value. */
+        u8 value: PWM3_CNT_BITS,
+        /* Current direction. */
+           dir:1;
+    } cnt;
+
+    if (cnt.value == (pwm3Value >> (8 - PWM3_CNT_BITS))) {
+        if (cnt.value == PWM3_CNT_MAX || cnt.value == 0) {
+            if ((cnt.value == PWM3_CNT_MAX && !PWM3_INVERSE) ||
+                (cnt.value == 0 && PWM3_INVERSE)) {
+
+                AVR_BIT_SET8(AVR_REG_PORT(PWM3_PORT), PWM3_PIN);
+            } else {
+                AVR_BIT_CLR8(AVR_REG_PORT(PWM3_PORT), PWM3_PIN);
+            }
+        } else if (cnt.dir == PWM3_INVERSE) {
+            AVR_BIT_SET8(AVR_REG_PORT(PWM3_PORT), PWM3_PIN);
+        } else {
+            AVR_BIT_CLR8(AVR_REG_PORT(PWM3_PORT), PWM3_PIN);
+        }
+    }
+
+    if (cnt.dir) {
+        if (cnt.value == PWM3_CNT_MAX) {
+            cnt.value--;
+            cnt.dir = FALSE;
+        } else {
+            cnt.value++;
+        }
+    } else {
+        if (cnt.value == 0) {
+            cnt.value++;
+            cnt.dir = TRUE;
+        } else {
+            cnt.value--;
+        }
+    }
+}
+
+static inline void
+PwmInit()
+{
+    /* Phase correct PWM mode, maximal frequency (~39kHz). */
+    TCCR2A = _BV(WGM20) | _BV(COM2A1) |
+#       if PWM1_INVERSE
+            _BV(COM2A0) |
+#       else
+            0 |
+#       endif
+        _BV(COM2B1) |
+#       if PWM2_INVERSE
+            _BV(COM2B0)
+#       else
+            0
+#       endif
+    ;
+    TCCR2B = _BV(CS20);
+    TIMSK2 = _BV(TOIE2);
+
+    AVR_BIT_SET8(AVR_REG_DDR(PWM1_PORT), PWM1_PIN);
+    AVR_BIT_SET8(AVR_REG_DDR(PWM2_PORT), PWM2_PIN);
+    AVR_BIT_SET8(AVR_REG_DDR(PWM3_PORT), PWM3_PIN);
+}
+
+void
+Pwm1Set(u8 value)
+{
+    OCR2A = value;
+}
+
+u8
+Pwm1Get()
+{
+    return OCR2A;
+}
+
+void
+Pwm2Set(u8 value)
+{
+    OCR2B = value;
+}
+
+u8
+Pwm2Get()
+{
+    return OCR2B;
+}
+
+void
+Pwm3Set(u8 value)
+{
+    pwm3Value = value;
+}
+
+u8
+Pwm3Get()
+{
+    return pwm3Value;
+}
+
+
+/* ****************************************************************************/
 /* XXX */
 
 static inline void
@@ -570,6 +691,14 @@ OnRotEncClick(u8 dir __UNUSED)
         }
     }
     PORTB = (PORTB & ~0x1e) | mask;
+
+    u8 pwm = Pwm3Get();
+    if (dir && pwm < 255) {
+        pwm++;
+    } else if (!dir && pwm > 0) {
+        pwm--;
+    }
+    Pwm3Set(pwm);
 }
 
 u16
@@ -587,6 +716,7 @@ main(void)
     LvlGaugeInit();
     BtnInit();
     RotEncInit();
+    PwmInit();
 
     //XXX
     DDRB |= 0x1e;
@@ -603,6 +733,7 @@ main(void)
         cli();
         if (!g.pollPending && !AdcSleepDisabled()) {
             AVR_BIT_SET8(MCUCR, SE);
+            /* Atomic sleeping. */
             __asm__ volatile ("sei; sleep");
             AVR_BIT_CLR8(MCUCR, SE);
             cli();
