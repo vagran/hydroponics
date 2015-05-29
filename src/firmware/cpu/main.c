@@ -31,7 +31,11 @@ static struct {
      */
     u8 pollPending:1,
     /** Measurement in progress. */
-       lvlGaugeActive:1;
+       lvlGaugeActive:1,
+
+    /* Failure flags. */
+    /** Level gauge failure. */
+       failLvlGauge:1;
 } g;
 
 /* ****************************************************************************/
@@ -40,12 +44,14 @@ static struct {
 /** System clock ticks. Use @ref GetClockTicks() to get the current value. */
 static u32 g_clockTicks = 0;
 
+/** Task descriptor. */
 typedef struct {
     /** Non-zero if scheduled. */
     u16 delay;
     TaskHandler handler;
 } Task;
 
+/** Task descriptors pool. */
 static Task g_tasks[MAX_TASKS];
 /** Number of scheduler ticks passed from previous tasks run. */
 static u16 g_schedulerTicks;
@@ -453,6 +459,8 @@ RotEncInit()
 /* ****************************************************************************/
 /* Level gauge. */
 
+static u16 g_lvlGaugeResult;
+
 /** Invoked when measurement complete.
  * @param value xxx
  */
@@ -477,7 +485,8 @@ ISR(TIMER1_CAPT_vect)
         return;
     }
     g.lvlGaugeActive = FALSE;
-    OnLvlGaugeResult(TCNT1);
+    g_lvlGaugeResult = ICR1;
+    g.pollPending = TRUE;
 }
 
 static inline void
@@ -497,6 +506,19 @@ LvlGaugeInit()
     AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
 }
 
+static inline void
+LvlGaugePoll()
+{
+    cli();
+    u16 value = g_lvlGaugeResult;
+    g_lvlGaugeResult = 0;
+    sei();
+    if (value == 0) {
+        return;
+    }
+    OnLvlGaugeResult(value);
+}
+
 /** Start level measurement. */
 static void
 LvlGaugeStart()
@@ -506,12 +528,17 @@ LvlGaugeStart()
 
     if (g.lvlGaugeActive) {
         /* Measurement in progress. Drop the new request. */
+        SREG = sreg;
         return;
     }
     g.lvlGaugeActive = TRUE;
 
-    /* Skip previous echo if active. */
-    while (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
+    if (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN)) {
+        /* Previous echo still active. Probably sensor failure. */
+        g.failLvlGauge = TRUE;
+        SREG = sreg;
+        return;
+    }
     /* Set trigger line and poll for echo start. */
     AVR_BIT_SET8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
     while (!AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
@@ -729,6 +756,7 @@ main(void)
 
         SchedulerPoll();
         RotEncPoll();
+        LvlGaugePoll();
 
         cli();
         if (!g.pollPending && !AdcSleepDisabled()) {
