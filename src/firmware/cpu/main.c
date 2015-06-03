@@ -5,6 +5,7 @@
  */
 #include <adk.h>
 #include "cpu.h"
+#include "i2c.h"
 
 static inline void
 OnAdcResult(u8 type, u16 value);
@@ -275,8 +276,8 @@ TempFeedValue(u16 value)
 /* ****************************************************************************/
 /* Button control. */
 
-#define BTN_JITTER_DELAY    TASK_DELAY_MS(250)
-#define BTN_LONG_DELAY      TASK_DELAY_MS(1500)
+#define BTN_JITTER_DELAY    TASK_DELAY_MS(100)
+#define BTN_LONG_DELAY      TASK_DELAY_MS(1000)
 
 static u16
 BtnPoll()
@@ -690,10 +691,13 @@ OnLvlGaugeResult(u16 value __UNUSED)
     //LvlGaugeStart();//XXX
 }
 
+u8 tmpMode;
+
 static inline void
 OnButtonPressed()
 {
     //XXX
+    tmpMode = ~tmpMode;
 }
 
 static inline void
@@ -719,13 +723,23 @@ OnRotEncClick(u8 dir __UNUSED)
     }
     PORTB = (PORTB & ~0x1e) | mask;
 
-    u8 pwm = Pwm3Get();
-    if (dir && pwm < 255) {
-        pwm++;
-    } else if (!dir && pwm > 0) {
-        pwm--;
+    if (tmpMode) {
+        u8 pwm = Pwm3Get();
+        if (dir && pwm < 255) {
+            pwm++;
+        } else if (!dir && pwm > 0) {
+            pwm--;
+        }
+        Pwm3Set(pwm);
+    } else {
+        u8 pwm = Pwm2Get();
+        if (dir && pwm < 255) {
+            pwm++;
+        } else if (!dir && pwm > 0) {
+            pwm--;
+        }
+        Pwm2Set(pwm);
     }
-    Pwm3Set(pwm);
 }
 
 u16
@@ -744,6 +758,7 @@ main(void)
     BtnInit();
     RotEncInit();
     PwmInit();
+    I2cInit();
 
     //XXX
     DDRB |= 0x1e;
@@ -757,6 +772,7 @@ main(void)
         SchedulerPoll();
         RotEncPoll();
         LvlGaugePoll();
+        I2cPoll();
 
         cli();
         if (!g.pollPending && !AdcSleepDisabled()) {
