@@ -94,4 +94,8 @@ ScheduleTask(TaskHandler handler, u16 delay);
 u8
 UnscheduleTask(TaskHandler handler);
 
+#include "i2c.h"
+
+extern I2cBus i2cBus;
+
 #endif /* CPU_H_ */

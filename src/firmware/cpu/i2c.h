@@ -17,6 +17,16 @@
 #define I2C_REQ_QUEUE_SIZE 4
 #endif
 
+class I2cBus {
+public:
+    /** Initialize I2C driver. */
+    I2cBus();
+
+    /** Call from main loop. */
+    void
+    Poll();
+} __PACKED;
+
 typedef enum {
     /** SLA+W successfully transferred. Ready to transmit bytes. */
     TRANSMIT_READY,
@@ -67,6 +77,13 @@ typedef u8 (*I2cTransferHandler)(I2cStatus status, u8 data);
 u8
 I2cRequestTransfer(u8 address, u8 isTransmit, I2cTransferHandler handler);
 
+/** Enqueue new transfer right after the current one. The transfer is guaranteed
+ * to be executed with repeated start condition. Should be called in transfer
+ * handler only.
+ */
+void
+I2cRequestInstantTransfer(u8 address, u8 isTransmit, I2cTransferHandler handler);
+
 /** Send NACK on next received byte. Should be called in transfer handler only. */
 void
 I2cNack();
@@ -77,13 +94,5 @@ I2cNack();
  */
 void
 I2cTransmitByte(u8 data);
-
-/** Initialize I2C driver. */
-void
-I2cInit();
-
-/** Call from main loop. */
-void
-I2cPoll();
 
 #endif /* I2C_H_ */

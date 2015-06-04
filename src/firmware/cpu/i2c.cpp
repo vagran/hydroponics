@@ -9,6 +9,10 @@
 #include <adk.h>
 #include "i2c.h"
 
+typedef enum {
+    S_IDLE
+} I2cState;
+
 /** Transfer request. */
 typedef struct __PACKED {
     /** Address packet byte. */
@@ -29,11 +33,12 @@ static I2cTranfserReq reqQueue[I2C_REQ_QUEUE_SIZE];
 /** State variables. */
 static struct {
     /** Index of next element in the requests queue. */
-    u8 queuePtr:REQ_QUEUE_PTR_BITS;
+    u8 queuePtr:REQ_QUEUE_PTR_BITS,
+       instantTransferPending:1,
+       state:3;
 } g_i2c;
 
-void
-I2cInit()
+I2cBus::I2cBus()
 {
     /* 400kHz clock. */
     TWBR = 17;
@@ -41,9 +46,14 @@ I2cInit()
 }
 
 void
-I2cPoll()
+I2cBus::Poll()
 {
-    //XXX
+    u8 sreg = SREG;
+    cli();
+    if (g_i2c.state == S_IDLE) {
+        //XXX
+    }
+    SREG = sreg;
 }
 
 ISR(TWI_vect)
@@ -77,4 +87,16 @@ I2cRequestTransfer(u8 address, u8 isTransmit, I2cTransferHandler handler)
     reqQueue[idx].sla = (address << 1) | (isTransmit ? 0 : 1);
     SREG = sreg;
     return TRUE;
+}
+
+void
+I2cRequestInstantTransfer(u8 address, u8 isTransmit, I2cTransferHandler handler)
+{
+    u8 sreg = SREG;
+    cli();
+    u8 idx = g_i2c.queuePtr;
+    reqQueue[idx].handler = handler;
+    reqQueue[idx].sla = (address << 1) | (isTransmit ? 0 : 1);
+    g_i2c.instantTransferPending = TRUE;
+    SREG = sreg;
 }

@@ -5,7 +5,10 @@
  */
 #include <adk.h>
 #include "cpu.h"
-#include "i2c.h"
+
+using namespace adk;
+
+I2cBus i2cBus;
 
 static inline void
 OnAdcResult(u8 type, u16 value);
@@ -46,11 +49,11 @@ static struct {
 static u32 g_clockTicks = 0;
 
 /** Task descriptor. */
-typedef struct {
+struct Task {
     /** Non-zero if scheduled. */
     u16 delay;
     TaskHandler handler;
-} Task;
+};
 
 /** Task descriptors pool. */
 static Task g_tasks[MAX_TASKS];
@@ -60,33 +63,27 @@ static u16 g_schedulerTicks;
 u8
 ScheduleTask(TaskHandler handler, u16 delay)
 {
-    u8 sreg = SREG;
-    cli();
+    AtomicSection as;
     for (TaskId id = 0; id < MAX_TASKS; id++) {
         if (g_tasks[id].delay == 0) {
             g_tasks[id].delay = delay;
             g_tasks[id].handler = handler;
-            SREG = sreg;
             return TRUE;
         }
     }
-    SREG = sreg;
     return FALSE;
 }
 
 u8
 UnscheduleTask(TaskHandler handler)
 {
-    u8 sreg = SREG;
-    cli();
+    AtomicSection as;
     for (TaskId id = 0; id < MAX_TASKS; id++) {
         if (g_tasks[id].handler == handler) {
             g_tasks[id].delay = 0;
-            SREG = sreg;
             return TRUE;
         }
     }
-    SREG = sreg;
     return FALSE;
 }
 
@@ -134,11 +131,8 @@ SchedulerPoll()
 static inline u32
 GetClockTicks()
 {
-    u8 sreg = SREG;
-    cli();
-    u32 ret = g_clockTicks;
-    SREG = sreg;
-    return ret;
+    AtomicSection as;
+    return g_clockTicks;
 }
 
 /** Clock ticks occur with TICK_FREQ frequency. */
@@ -195,8 +189,7 @@ _StartConvertion(u8 input)
 static inline void
 AdcStart(u8 input)
 {
-    u8 sreg = SREG;
-    cli();
+    AtomicSection as;
 
     if (g_adcCurrent == 0) {
         g_adcSkip = 2;
@@ -205,8 +198,6 @@ AdcStart(u8 input)
     } else {
         g_adcPending = input;
     }
-
-    SREG = sreg;
 }
 
 ISR(ADC_vect)
@@ -432,12 +423,11 @@ ISR(PCINT1_vect)
 static inline void
 RotEncPoll()
 {
-    cli();
+    AtomicSection as;
     if (g_re.linesCheckPending) {
         RotEncCheckLines();
         g_re.linesCheckPending = FALSE;
     }
-    sei();
 }
 
 static inline void
@@ -524,12 +514,10 @@ LvlGaugePoll()
 static void
 LvlGaugeStart()
 {
-    u8 sreg = SREG;
-    cli();
+    AtomicSection as;
 
     if (g.lvlGaugeActive) {
         /* Measurement in progress. Drop the new request. */
-        SREG = sreg;
         return;
     }
     g.lvlGaugeActive = TRUE;
@@ -537,7 +525,6 @@ LvlGaugeStart()
     if (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN)) {
         /* Previous echo still active. Probably sensor failure. */
         g.failLvlGauge = TRUE;
-        SREG = sreg;
         return;
     }
     /* Set trigger line and poll for echo start. */
@@ -551,8 +538,6 @@ LvlGaugeStart()
 
     /* Clear trigger line. */
     AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-
-    SREG = sreg;
 }
 
 /* ****************************************************************************/
@@ -758,7 +743,6 @@ main(void)
     BtnInit();
     RotEncInit();
     PwmInit();
-    I2cInit();
 
     //XXX
     DDRB |= 0x1e;
@@ -772,7 +756,7 @@ main(void)
         SchedulerPoll();
         RotEncPoll();
         LvlGaugePoll();
-        I2cPoll();
+        i2cBus.Poll();
 
         cli();
         if (!g.pollPending && !AdcSleepDisabled()) {
