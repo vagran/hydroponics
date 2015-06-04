@@ -6,6 +6,13 @@
 #ifndef CPU_H_
 #define CPU_H_
 
+bool
+AdcSleepEnabled();
+
+#define SCHEDULER_CHECK_SLEEPING_ALLOWED AdcSleepEnabled
+
+#include <adk.h>
+
 //XXX revise
 /** Port for button. */
 #define BUTTON_PORT   C
@@ -51,6 +58,7 @@
 /** Inverse output for the third (low frequency) PWM channel when TRUE. */
 #define PWM3_INVERSE            TRUE
 
+
 /** Clock ticks frequency. */
 #define TICK_FREQ       (ADK_MCU_FREQ / 1024 / 256)
 /** Clock tick period in ms. */
@@ -61,16 +69,33 @@
 /** Convert ticks to seconds. */
 #define TICK_TO_S(__t) ((u32)(__t) * 1024 * 256 / ADK_MCU_FREQ)
 
-/** Scheduled task handler. Returns non-zero delay to reschedule task with or
- * zero to terminate the task.
- */
-typedef u16 (*TaskHandler)();
+extern adk::Scheduler scheduler;
 
-typedef u8 TaskId;
+/** System clock ticks. Use @ref Clock::GetTicks() to get the current value. */
+class Clock {
+public:
+    Clock();
 
-/** Maximal number of tasks allowed to schedule. */
-#define MAX_TASKS       10
-#define INVALID_TASK    0xff
+    /** Get current value of the system clock. */
+    u32
+    GetTicks()
+    {
+        adk::AtomicSection as;
+        return ticks;
+    }
+
+    /** Should be called from interrupt. */
+    void
+    Tick()
+    {
+        ticks++;
+        scheduler.Tick();
+    }
+private:
+    u32 ticks;
+} __PACKED;
+
+extern Clock clock;
 
 /* Minimize significant bits loss in the calculations below by using proper
  * calculations sequence.
@@ -80,22 +105,6 @@ typedef u8 TaskId;
 #define TASK_DELAY_S(__s) \
     ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
-/** Schedule task for deferred execution.
- *
- * @return TRUE if scheduled, FALSE if failed.
- */
-u8
-ScheduleTask(TaskHandler handler, u16 delay);
-
-/** Cancel previously scheduled task.
- *
- * @return TRUE if unscheduled, FALSE if already terminated.
- */
-u8
-UnscheduleTask(TaskHandler handler);
-
 #include "i2c.h"
-
-extern I2cBus i2cBus;
 
 #endif /* CPU_H_ */

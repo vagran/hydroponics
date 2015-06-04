@@ -3,12 +3,9 @@
  * All rights reserved.
  * See COPYING file for copyright details.
  */
-#include <adk.h>
 #include "cpu.h"
 
 using namespace adk;
-
-I2cBus i2cBus;
 
 static inline void
 OnAdcResult(u8 type, u16 value);
@@ -19,23 +16,19 @@ OnButtonPressed();
 static inline void
 OnButtonLongPressed();
 
-/** Invoked when rotary encoder rotated on one tick.
+/** Invoked when rotary encoder rotated on one click.
  *
- * @param dir CW direction when TRUE, CCW when FALSE.
+ * @param dir CW direction when true, CCW when false.
  */
 static void
-OnRotEncClick(u8 dir);
+OnRotEncClick(bool dir);
 
 /** Global bit-field variables for saving RAM space. Should be accessed with
  * interrupts disabled.
  */
 static struct {
-    /** Any interrupt can set this flag to indicate that scheduler polling round
-     * should be executed.
-     */
-    u8 pollPending:1,
     /** Measurement in progress. */
-       lvlGaugeActive:1,
+    u8 lvlGaugeActive:1,
 
     /* Failure flags. */
     /** Level gauge failure. */
@@ -45,106 +38,16 @@ static struct {
 /* ****************************************************************************/
 /* System clock and scheduler. */
 
-/** System clock ticks. Use @ref GetClockTicks() to get the current value. */
-static u32 g_clockTicks = 0;
-
-/** Task descriptor. */
-struct Task {
-    /** Non-zero if scheduled. */
-    u16 delay;
-    TaskHandler handler;
-};
-
-/** Task descriptors pool. */
-static Task g_tasks[MAX_TASKS];
-/** Number of scheduler ticks passed from previous tasks run. */
-static u16 g_schedulerTicks;
-
-u8
-ScheduleTask(TaskHandler handler, u16 delay)
-{
-    AtomicSection as;
-    for (TaskId id = 0; id < MAX_TASKS; id++) {
-        if (g_tasks[id].delay == 0) {
-            g_tasks[id].delay = delay;
-            g_tasks[id].handler = handler;
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-u8
-UnscheduleTask(TaskHandler handler)
-{
-    AtomicSection as;
-    for (TaskId id = 0; id < MAX_TASKS; id++) {
-        if (g_tasks[id].handler == handler) {
-            g_tasks[id].delay = 0;
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-
-/** Process scheduled tasks. */
-static inline void
-SchedulerPoll()
-{
-    cli();
-    u16 ticks = g_schedulerTicks;
-    g_schedulerTicks = 0;
-    sei();
-
-    if (ticks == 0) {
-        return;
-    }
-
-    u8 pendingSkipped = FALSE;
-    for (TaskId id = 0; id < MAX_TASKS; id++) {
-        Task *task = &g_tasks[id];
-
-        if (task->delay != 0) {
-            if (task->delay <= ticks) {
-                /* Preserve delay during the call to reserve this entry. */
-                task->delay = task->handler();
-                if (task->delay != 0) {
-                    pendingSkipped = TRUE;
-                }
-                /* Update ticks counter after each task run. */
-                cli();
-                if (pendingSkipped && g_schedulerTicks != 0) {
-                    /* Schedule additional round instantly. */
-                    g.pollPending = TRUE;
-                }
-                ticks += g_schedulerTicks;
-                g_schedulerTicks = 0;
-                sei();
-            } else {
-                task->delay -= ticks;
-                pendingSkipped = TRUE;
-            }
-        }
-    }
-}
-
-static inline u32
-GetClockTicks()
-{
-    AtomicSection as;
-    return g_clockTicks;
-}
+Clock clock;
+adk::Scheduler scheduler;
 
 /** Clock ticks occur with TICK_FREQ frequency. */
 ISR(TIMER0_OVF_vect)
 {
-    g_clockTicks++;
-    g_schedulerTicks++;
-    g.pollPending = TRUE;
+    clock.Tick();
 }
 
-static inline void
-ClockInit()
+Clock::Clock()
 {
     /* CLK / 1024, Normal mode. */
     TCCR0B = _BV(CS02) | _BV(CS00);
@@ -173,10 +76,10 @@ static u8 g_adcPending, g_adcCurrent, g_adcSkip;
 /** Prevent MCU from sleeping when ADC conversion in progress (since it will
  * probably stop I/O clock and will fail the conversion).
  */
-static inline u8
-AdcSleepDisabled()
+bool
+AdcSleepEnabled()
 {
-    return g_adcCurrent != 0 || g_adcPending != 0;
+    return g_adcCurrent == 0 && g_adcPending == 0;
 }
 
 static inline void
@@ -298,16 +201,85 @@ BtnInit()
 {
     /* Enable pull-up resistor on button pin. */
     AVR_BIT_SET8(AVR_REG_PORT(BUTTON_PORT), BUTTON_PIN);
-    ScheduleTask(BtnPoll, 1);
+    scheduler.ScheduleTask(BtnPoll, 1);
 }
 
 /* ****************************************************************************/
 /* Rotary encoder. */
 
-/** Anti-jittering delay in timer 0 ticks. */
-#define ROT_ENC_JITTER_DELAY    8
+class RotEnc {
+public:
+    enum {
+        /** Anti-jittering delay in timer 0 ticks. */
+        ROT_ENC_JITTER_DELAY = 8
+    };
 
-static struct {
+    RotEnc()
+    {
+        /* Lines initial state is high since RE has both lines open in stable
+         * position between clicks.
+         */
+        curA = 1;
+        curB = 1;
+        /* Enable pull-up resistor on signal lines. */
+        AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_A_PORT), ROT_ENC_A_PIN);
+        AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_B_PORT), ROT_ENC_B_PIN);
+        /* Use pin-change interrupts for rotary encoder processing. */
+        AVR_BIT_SET8(PCICR, PCIE1);
+        AVR_BIT_SET8(PCMSK1, PCINT8);
+        AVR_BIT_SET8(PCMSK1, PCINT9);
+    }
+
+    /** Filter jittering on line A. */
+    void
+    HandleLineAInterrupt()
+    {
+        u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
+        if (pin != curA) {
+            curA = pin;
+            stepCount += pin != curB ? 1 : -1;
+            CheckClick();
+        }
+        AVR_BIT_CLR8(TIMSK0, OCIE0A);
+        pendingA = false;
+    }
+
+    /** Filter jittering on line B. */
+    void
+    HandleLineBInterrupt()
+    {
+        u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
+        if (pin != curB) {
+            curB = pin;
+            stepCount += pin == curA ? 1 : -1;
+            CheckClick();
+        }
+        AVR_BIT_CLR8(TIMSK0, OCIE0B);
+        pendingB = false;
+    }
+
+    /** Pin change interrupt may be shared with other periphery so do not make
+     * any assumptions about this.
+     */
+    void
+    HandlePinChangeInterrupt()
+    {
+        CheckLines();
+        /* Ensure line state is not missed while processing the interrupt. */
+        linesCheckPending = true;
+        scheduler.SchedulePoll();
+    }
+
+    void
+    Poll()
+    {
+        AtomicSection as;
+        if (linesCheckPending) {
+            CheckLines();
+            linesCheckPending = false;
+        }
+    }
+private:
     /** Rotary encoder steps counter. Incremented or decremented after each
      * step depending on rotation direction. When full click is rotated the
      * counter is checked. One click is four steps. In case of half-click
@@ -324,127 +296,77 @@ static struct {
        pendingB:1,
     /** Pending lines check in poll function. */
        linesCheckPending:1;
-} g_re;
 
-/** Check if full click performed. */
-static void
-RotEncCheckClick()
-{
-    if (g_re.curA && g_re.curB) {
-        /* Stable position between clicks. Check if full click performed. */
-        i8 dir;
-        if (g_re.stepCount >= 4) {
-            dir = 1;
-        } else if (g_re.stepCount <= -4) {
-            dir = -1;
-        } else {
-            dir = 0;
-        }
-        g_re.stepCount = 0;
-        if (dir != 0) {
-            OnRotEncClick(dir > 0);
+    /** Check if full click performed. */
+    void
+    CheckClick()
+    {
+        if (curA && curB) {
+            /* Stable position between clicks. Check if full click performed. */
+            i8 dir;
+            if (stepCount >= 4) {
+                dir = 1;
+            } else if (stepCount <= -4) {
+                dir = -1;
+            } else {
+                dir = 0;
+            }
+            stepCount = 0;
+            if (dir != 0) {
+                OnRotEncClick(dir > 0);
+            }
         }
     }
-}
 
-/** Filter jittering on line A. */
+    void
+    CheckLines()
+    {
+        u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
+        if (pin != curA) {
+            if (!pendingA) {
+                /* Schedule anti-jittering delay. */
+                OCR0A = TCNT0 + ROT_ENC_JITTER_DELAY;
+                TIFR0 = _BV(OCF0A);
+                AVR_BIT_SET8(TIMSK0, OCIE0A);
+                pendingA = true;
+            }
+        } else {
+            pendingA = false;
+            AVR_BIT_CLR8(TIMSK0, OCIE0A);
+        }
+
+        pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
+        if (pin != curB) {
+            if (!pendingB) {
+                /* Schedule anti-jittering delay. */
+                OCR0B = TCNT0 + ROT_ENC_JITTER_DELAY;
+                TIFR0 = _BV(OCF0B);
+                AVR_BIT_SET8(TIMSK0, OCIE0B);
+                pendingB = true;
+            }
+        } else {
+            pendingB = false;
+            AVR_BIT_CLR8(TIMSK0, OCIE0B);
+        }
+    }
+} __PACKED;
+
+RotEnc rotEnc;
+
 ISR(TIMER0_COMPA_vect)
 {
-    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
-    if (pin != g_re.curA) {
-        g_re.curA = pin;
-        g_re.stepCount += pin != g_re.curB ? 1 : -1;
-        RotEncCheckClick();
-    }
-    AVR_BIT_CLR8(TIMSK0, OCIE0A);
-    g_re.pendingA = FALSE;
+    rotEnc.HandleLineAInterrupt();
 }
 
-/** Filter jittering on line B. */
 ISR(TIMER0_COMPB_vect)
 {
-    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
-    if (pin != g_re.curB) {
-        g_re.curB = pin;
-        g_re.stepCount += pin == g_re.curA ? 1 : -1;
-        RotEncCheckClick();
-    }
-    AVR_BIT_CLR8(TIMSK0, OCIE0B);
-    g_re.pendingB = FALSE;
-}
-
-static void
-RotEncCheckLines()
-{
-    u8 pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_A_PORT), ROT_ENC_A_PIN) ? 1 : 0;
-    if (pin != g_re.curA) {
-        if (!g_re.pendingA) {
-            /* Schedule anti-jittering delay. */
-            OCR0A = TCNT0 + ROT_ENC_JITTER_DELAY;
-            TIFR0 = _BV(OCF0A);
-            AVR_BIT_SET8(TIMSK0, OCIE0A);
-            g_re.pendingA = TRUE;
-        }
-    } else {
-        g_re.pendingA = FALSE;
-        AVR_BIT_CLR8(TIMSK0, OCIE0A);
-    }
-
-    pin = AVR_BIT_GET8(AVR_REG_PIN(ROT_ENC_B_PORT), ROT_ENC_B_PIN) ? 1 : 0;
-    if (pin != g_re.curB) {
-        if (!g_re.pendingB) {
-            /* Schedule anti-jittering delay. */
-            OCR0B = TCNT0 + ROT_ENC_JITTER_DELAY;
-            TIFR0 = _BV(OCF0B);
-            AVR_BIT_SET8(TIMSK0, OCIE0B);
-            g_re.pendingB = TRUE;
-        }
-    } else {
-        g_re.pendingB = FALSE;
-        AVR_BIT_CLR8(TIMSK0, OCIE0B);
-    }
-}
-
-static inline void
-HandleRotEncInterrupt()
-{
-    RotEncCheckLines();
-    /* Ensure line state is not missed while processing the interrupt. */
-    g_re.linesCheckPending = TRUE;
-    g.pollPending = TRUE;
+    rotEnc.HandleLineBInterrupt();
 }
 
 // May be used also for other events.
 ISR(PCINT1_vect)
 {
-    HandleRotEncInterrupt();
-}
-
-static inline void
-RotEncPoll()
-{
-    AtomicSection as;
-    if (g_re.linesCheckPending) {
-        RotEncCheckLines();
-        g_re.linesCheckPending = FALSE;
-    }
-}
-
-static inline void
-RotEncInit()
-{
-    /* Lines initial state is high since RE has both lines open in stable
-     * position between clicks.
-     */
-    g_re.curA = 1;
-    g_re.curB = 1;
-    /* Enable pull-up resistor on signal lines. */
-    AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_A_PORT), ROT_ENC_A_PIN);
-    AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_B_PORT), ROT_ENC_B_PIN);
-    /* Use pin-change interrupts for rotary encoder processing. */
-    AVR_BIT_SET8(PCICR, PCIE1);
-    AVR_BIT_SET8(PCMSK1, PCINT8);
-    AVR_BIT_SET8(PCMSK1, PCINT9);
+    rotEnc.HandlePinChangeInterrupt();
 }
 
 /* ****************************************************************************/
@@ -477,7 +399,7 @@ ISR(TIMER1_CAPT_vect)
     }
     g.lvlGaugeActive = FALSE;
     g_lvlGaugeResult = ICR1;
-    g.pollPending = TRUE;
+    scheduler.SchedulePoll();
 }
 
 static inline void
@@ -692,7 +614,7 @@ OnButtonLongPressed()
 }
 
 void
-OnRotEncClick(u8 dir __UNUSED)
+OnRotEncClick(bool dir __UNUSED)
 {
     u8 mask = PORTB & 0x1e;
     if (dir) {
@@ -735,36 +657,25 @@ Test()
     return TASK_DELAY_MS(500);
 }
 
+void
+adk::PollFunc()
+{
+    rotEnc.Poll();
+    LvlGaugePoll();
+    i2cBus.Poll();
+}
+
 int
 main(void)
 {
-    ClockInit();
     LvlGaugeInit();
     BtnInit();
-    RotEncInit();
     PwmInit();
 
     //XXX
     DDRB |= 0x1e;
     PORTB |= 0x2;
-    //ScheduleTask(Test, TASK_DELAY_MS(500));
+    //scheduler.ScheduleTask(Test, TASK_DELAY_MS(500));
 
-    while (1) {
-        g.pollPending = FALSE;
-        sei();
-
-        SchedulerPoll();
-        RotEncPoll();
-        LvlGaugePoll();
-        i2cBus.Poll();
-
-        cli();
-        if (!g.pollPending && !AdcSleepDisabled()) {
-            AVR_BIT_SET8(MCUCR, SE);
-            /* Atomic sleeping. */
-            __asm__ volatile ("sei; sleep");
-            AVR_BIT_CLR8(MCUCR, SE);
-            cli();
-        }
-    }
+    scheduler.Run();
 }
