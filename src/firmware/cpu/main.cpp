@@ -600,11 +600,19 @@ OnLvlGaugeResult(u16 value __UNUSED)
 
 u8 tmpMode;
 
+static bool
+TestTransfer(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
+{
+    return false;
+}
+
 static inline void
 OnButtonPressed()
 {
     //XXX
     tmpMode = ~tmpMode;
+
+    i2cBus.RequestTransfer(0x5a, true, TestTransfer);
 }
 
 static inline void

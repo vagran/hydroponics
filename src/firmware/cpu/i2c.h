@@ -26,6 +26,8 @@
 class I2cBus {
 public:
     enum TransferStatus {
+        /** Do not call the transfer handler. Never seen by the handler. */
+        NONE,
         /** SLA+W successfully transferred. Ready to transmit bytes. */
         TRANSMIT_READY,
         /** SLA+R successfully transferred. Ready to receive bytes. */
@@ -100,9 +102,33 @@ public:
     void
     TransmitByte(u8 data);
 
+    /** Should be called by interrupt only. */
+    void
+    HandleInterrupt();
 private:
     enum State {
-        IDLE
+        IDLE,
+        SLA_W,
+        SLA_R,
+        SLA_W_SENT,
+        SLA_R_SENT
+    };
+
+    /** Hardware unit status codes. */
+    enum HwStatus {
+        START_SENT =            0x08,
+        REPEATED_START_SENT =   0x10,
+        SLA_W_ACK =             0x18,
+        SLA_W_NACK =            0x20,
+        DATA_SENT_ACK =         0x28,
+        DATA_SENT_NACK =        0x30,
+        ARBITRATION_LOST =      0x38,
+        SLA_R_ACK =             0x40,
+        SLA_R_NACK =            0x48,
+        DATA_RCVD_ACK =         0x50,
+        DATA_RCVD_NACK =        0x58,
+
+        NO_STATE =              0xf8
     };
 
     /** Transfer request. */
@@ -119,6 +145,29 @@ private:
     u8 queuePtr:I2C_REQ_QUEUE_PTR_BITS,
        instantTransferPending:1,
        state:3;
+
+    /** Check if hardware is currently idle. */
+    inline bool
+    IsHwIdle()
+    {
+        return (TWCR & _BV(TWINT)) || (TWSR == HwStatus::NO_STATE);
+    }
+
+    /** Send START condition. */
+    inline void
+    SendStart()
+    {
+        TWCR = ((TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
+                (_BV(TWINT) | _BV(TWSTA)));
+    }
+
+    inline void
+    SendByte(u8 byte)
+    {
+        TWDR = byte;
+        TWCR = ((TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
+                _BV(TWINT));
+    }
 
 } __PACKED;
 

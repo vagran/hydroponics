@@ -23,14 +23,77 @@ void
 I2cBus::Poll()
 {
     AtomicSection as;
-    if (state == State::IDLE) {
-        //XXX
+    if (state == State::IDLE && IsHwIdle()) {
+        TransferReq &req = reqQueue[queuePtr];
+        if (!req.handler) {
+            return;
+        }
+        if (req.sla & 1) {
+            state = State::SLA_R;
+        } else {
+            state = State::SLA_W;
+        }
+        SendStart();
     }
+}
+
+void
+I2cBus::HandleInterrupt()
+{
+    u8 hwStatus = TWSR;
+    TransferReq &req = reqQueue[queuePtr];
+    u8 rcvd = 0;
+    TransferStatus status = TransferStatus::NONE;
+
+    if (!req.handler) {
+        return;
+    }
+
+    switch (state) {
+    case State::SLA_R:
+        if (hwStatus != HwStatus::START_SENT &&
+            hwStatus != HwStatus::REPEATED_START_SENT) {
+
+            status = TransferStatus::RECEIVE_FAILED;
+            break;
+        }
+        state = State::SLA_R_SENT;
+        SendByte(req.sla);
+        //XXX
+        break;
+    case State::SLA_W:
+        if (hwStatus != HwStatus::START_SENT &&
+            hwStatus != HwStatus::REPEATED_START_SENT) {
+
+            status = TransferStatus::TRANSMIT_FAILED;
+            break;
+        }
+        state = State::SLA_W_SENT;
+        SendByte(req.sla);
+        //XXX
+        break;
+    //XXX
+    }
+
+    if (status != TransferStatus::NONE) {
+        bool ret __UNUSED = req.handler(status, rcvd);
+        if (IsClosingStatus(status)) {
+            req.handler = 0;
+            if (queuePtr == I2C_REQ_QUEUE_SIZE - 1) {
+                queuePtr = 0;
+            } else {
+                queuePtr++;
+            }
+        } else {
+            //XXX check pending transmission or repeated start
+        }
+    }
+    scheduler.SchedulePoll();
 }
 
 ISR(TWI_vect)
 {
-
+    i2cBus.HandleInterrupt();
 }
 
 bool
