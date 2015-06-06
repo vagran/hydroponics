@@ -601,8 +601,42 @@ OnLvlGaugeResult(u16 value __UNUSED)
 u8 tmpMode;
 
 static bool
-TestTransfer(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
+TestTransfer2(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
 {
+    static bool done = false;
+    if (status == I2cBus::TransferStatus::TRANSMIT_READY) {
+        i2cBus.TransmitByte(0x80);
+        return true;
+    } else if (status == I2cBus::TransferStatus::BYTE_TRANSMITTED && !done) {
+        done = true;
+        i2cBus.TransmitByte(0xa5);
+        return true;
+    }
+    return false;
+}
+
+static u16
+StartTransfer2()
+{
+    i2cBus.RequestTransfer(0x3c, true, TestTransfer2);
+    AVR_BIT_SET8(PORTB, 2);//XXX
+    return 0;
+}
+
+static bool
+TestTransfer1(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
+{
+    static bool done = false;
+    if (status == I2cBus::TransferStatus::TRANSMIT_READY) {
+        i2cBus.TransmitByte(0x80);
+        return true;
+    } else if (status == I2cBus::TransferStatus::BYTE_TRANSMITTED && !done) {
+        done = true;
+        i2cBus.TransmitByte(0xaf);
+        scheduler.ScheduleTask(StartTransfer2, TASK_DELAY_MS(100));
+        return true;
+    }
+    AVR_BIT_SET8(PORTB, 4);//XXX
     return false;
 }
 
@@ -612,7 +646,7 @@ OnButtonPressed()
     //XXX
     tmpMode = ~tmpMode;
 
-    i2cBus.RequestTransfer(0x5a, true, TestTransfer);
+    i2cBus.RequestTransfer(0x3c, true, TestTransfer1);
 }
 
 static inline void
@@ -624,19 +658,19 @@ OnButtonLongPressed()
 void
 OnRotEncClick(bool dir __UNUSED)
 {
-    u8 mask = PORTB & 0x1e;
-    if (dir) {
-        mask = (mask >> 1) & 0x1e;
-        if (mask == 0) {
-            mask = 0x10;
-        }
-    } else {
-        mask = (mask << 1) & 0x1e;
-        if (mask == 0) {
-            mask = 0x2;
-        }
-    }
-    PORTB = (PORTB & ~0x1e) | mask;
+//    u8 mask = PORTB & 0x1e;
+//    if (dir) {
+//        mask = (mask >> 1) & 0x1e;
+//        if (mask == 0) {
+//            mask = 0x10;
+//        }
+//    } else {
+//        mask = (mask << 1) & 0x1e;
+//        if (mask == 0) {
+//            mask = 0x2;
+//        }
+//    }
+//    PORTB = (PORTB & ~0x1e) | mask;
 
     if (tmpMode) {
         u8 pwm = Pwm3Get();
@@ -682,8 +716,6 @@ main(void)
 
     //XXX
     DDRB |= 0x1e;
-    PORTB |= 0x2;
-    //scheduler.ScheduleTask(Test, TASK_DELAY_MS(500));
 
     scheduler.Run();
 }

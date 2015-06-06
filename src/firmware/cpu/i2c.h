@@ -12,6 +12,25 @@
 #ifndef I2C_H_
 #define I2C_H_
 
+/** I2C lines port and pins for internal pull-up resistors if used. Define
+ * I2C_USE_PULLUP for enabling internal pull-up resistors.
+ */
+#ifndef I2C_SCL_PORT
+#define I2C_SCL_PORT    C
+#endif
+
+#ifndef I2C_SCL_PIN
+#define I2C_SCL_PIN     5
+#endif
+
+#ifndef I2C_SDA_PORT
+#define I2C_SDA_PORT    C
+#endif
+
+#ifndef I2C_SDA_PIN
+#define I2C_SDA_PIN     4
+#endif
+
 /** Maximal number of queued I2C transfer request. */
 #ifndef I2C_REQ_QUEUE_SIZE
 #define I2C_REQ_QUEUE_SIZE 4
@@ -28,9 +47,14 @@ public:
     enum TransferStatus {
         /** Do not call the transfer handler. Never seen by the handler. */
         NONE,
-        /** SLA+W successfully transferred. Ready to transmit bytes. */
+        /** SLA+W successfully transferred. Ready to transmit bytes. The handler
+         * should call TransmitByte() function to schedule next byte.
+         * transmission.
+         */
         TRANSMIT_READY,
-        /** SLA+R successfully transferred. Ready to receive bytes. */
+        /** SLA+R successfully transferred. Ready to receive bytes. Nack()
+         * method can be called to send NACK on the first received byte.
+         */
         RECEIVE_READY,
         /** Byte was successfully transmitted, ready to transmit next byte. */
         BYTE_TRANSMITTED,
@@ -42,12 +66,17 @@ public:
         CLOSE_MASK = 0x80,
         /** Either arbitration lost, NACK on SLA+W or other failure. */
         TRANSMIT_FAILED = 0x80,
-        /** Either arbitration lost, NACK on SLA+W or other failure. */
+        /** Either arbitration lost, NACK on SLA+R or other failure. */
         RECEIVE_FAILED,
         /** NACK received when transmitting byte. */
         NACK,
         /** Byte was successfully received and NACK has been returned. */
-        LAST_BYTE_RECEIVED
+        LAST_BYTE_RECEIVED,
+
+        /** Special status for final read after transfer was closed by handler
+         * but NACK was not sent. Never seen by handler.
+         */
+        READ_CLOSED
     };
 
     /** Handles I2C transfer steps.
@@ -86,21 +115,37 @@ public:
 
     /** Enqueue new transfer right after the current one. The transfer is guaranteed
      * to be executed with repeated start condition. Should be called in transfer
-     * handler only.
+     * handler only. The current transfer is closed. For read transfer the
+     * scheduled instant transfer will be deferred until NACK is sent.
      */
     void
     RequestInstantTransfer(u8 address, bool isTransmit, TransferHandler handler);
 
-    /** Send NACK on next received byte. Should be called in transfer handler only. */
+    /** Send NACK on next received byte. Should be called in transfer handler
+     * only. Have effect in read transfer only.
+     */
     void
-    Nack();
+    Nack()
+    {
+        if (state == State::READ) {
+            nackPending = true;
+        }
+    }
 
     /** Specify next byte for transmission.  Should be called in transfer handler
-     * only.
+     * only. Have effect in write transfer only. The transfer is closed if not
+     * called in write transfer handler.
+     *
      * @param data Byte to transmit.
      */
     void
-    TransmitByte(u8 data);
+    TransmitByte(u8 data)
+    {
+        if (state == State::WRITE) {
+            pendingTransmitByte = data;
+            transmitPending = true;
+        }
+    }
 
     /** Should be called by interrupt only. */
     void
@@ -111,7 +156,11 @@ private:
         SLA_W,
         SLA_R,
         SLA_W_SENT,
-        SLA_R_SENT
+        SLA_R_SENT,
+        READ,
+        WRITE,
+        /** Transfer closed by handler, NACK should be sent on next byte. */
+        CLOSING_READ
     };
 
     /** Hardware unit status codes. */
@@ -141,10 +190,17 @@ private:
 
     /** Pending requests queue. */
     TransferReq reqQueue[I2C_REQ_QUEUE_SIZE];
+    /** Byte to transmit. */
+    u8 pendingTransmitByte;
     /** Index of next element in the requests queue. */
     u8 queuePtr:I2C_REQ_QUEUE_PTR_BITS,
+    /** Transfer at current queue position should be started by repeated start. */
        instantTransferPending:1,
-       state:3;
+       state:3,
+   /** Send NACK on next received byte. */
+       nackPending:1,
+   /** Next transmission byte specified. */
+       transmitPending:1;
 
     /** Check if hardware is currently idle. */
     inline bool
@@ -157,17 +213,38 @@ private:
     inline void
     SendStart()
     {
-        TWCR = ((TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
-                (_BV(TWINT) | _BV(TWSTA)));
+        TWCR = (TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
+               (_BV(TWINT) | _BV(TWSTA));
     }
 
+    /** Send STOP condition. */
+    inline void
+    SendStop()
+    {
+        TWCR = (TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
+               (_BV(TWINT) | _BV(TWSTO));
+    }
+
+    /** Send data byte. */
     inline void
     SendByte(u8 byte)
     {
         TWDR = byte;
-        TWCR = ((TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
-                _BV(TWINT));
+        TWCR = (TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO))) |
+               _BV(TWINT);
     }
+
+    inline void
+    ReceiveByte()
+    {
+        TWCR = (TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO) | _BV(TWEA))) |
+                (_BV(TWINT) | (nackPending ? _BV(TWEA) : 0));
+        nackPending = false;
+    }
+
+    /** Close current trasfer. Should be called with interrupts disabled. */
+    void
+    CloseTransfer();
 
 } __PACKED;
 

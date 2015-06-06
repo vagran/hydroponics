@@ -11,6 +11,8 @@ AdcSleepEnabled();
 
 #define SCHEDULER_CHECK_SLEEPING_ALLOWED AdcSleepEnabled
 
+#define I2C_USE_PULLUP
+
 #include <adk.h>
 
 //XXX revise
