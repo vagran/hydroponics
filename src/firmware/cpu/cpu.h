@@ -108,5 +108,6 @@ extern Clock clock;
     ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
 #include "i2c.h"
+#include "display.h"
 
 #endif /* CPU_H_ */

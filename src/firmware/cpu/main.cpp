@@ -705,6 +705,7 @@ adk::PollFunc()
     rotEnc.Poll();
     LvlGaugePoll();
     i2cBus.Poll();
+    display.Poll();
 }
 
 int
@@ -713,6 +714,7 @@ main(void)
     LvlGaugeInit();
     BtnInit();
     PwmInit();
+    display.Initialize();
 
     //XXX
     DDRB |= 0x1e;
