@@ -15,6 +15,9 @@
 #define DISPLAY_ADDRESS 0x3c
 #endif
 
+#define DISPLAY_COLUMNS 128
+#define DISPLAY_PAGES   8
+
 /** Graphical display based on SSD1306 controller. Communication via I2C bus. */
 class Display {
 public:
@@ -41,9 +44,15 @@ public:
     void
     Poll();
 
-    /** Output graphics into the provided viewport. */
+    /** Output graphics into the provided viewport. The handler is called until
+     * it returns false or the viewport is fully covered.
+     */
     void
     Output(Viewport vp, GraphicsProvider provider);
+
+    /** Clear the entire display content. */
+    void
+    Clear();
 
 private:
     enum {
@@ -151,7 +160,8 @@ private:
        outVpState:3,
     /** Control byte sent for output data. */
        outDataCtrlSent:1,
-       reserved:1;
+    /** Current output request complete. */
+       outReqComplete:1;
     OutputReq outQueue[MAX_OUT_REQS];
     /** Currently active viewport. */
     Viewport curVp;

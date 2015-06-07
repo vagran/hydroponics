@@ -209,6 +209,12 @@ Display::HandleOutputTransfer(I2cBus::TransferStatus status)
         return false;
     }
 
+    if (outReqComplete) {
+        /* Viewport fully covered. */
+        FinishOutputRequest();
+        return false;
+    }
+
     if (outVpCtrlSent) {
         i2cBus.TransmitByte(outVpCmd);
         outVpCtrlSent = false;
@@ -294,7 +300,9 @@ Display::HandleOutputTransfer(I2cBus::TransferStatus status)
     if (curColumn == curVp.maxCol) {
         curColumn = curVp.minCol;
         if (curPage == curVp.maxPage) {
+            /* Viewport fully covered. */
             curPage = curVp.minPage;
+            outReqComplete = true;
         } else {
             curPage++;
         }
@@ -317,5 +325,20 @@ Display::FinishOutputRequest()
     outVpCtrlSent = false;
     outInProgress = false;
     outDataCtrlSent = false;
+    outReqComplete = false;
     return outQueue[curOutReq].provider;
+}
+
+static bool
+ClearOutputHandler(u8, u8, u8 *data)
+{
+    *data = 0;
+    return true;
+}
+
+void
+Display::Clear()
+{
+    Output(Viewport { 0, DISPLAY_PAGES - 1, 0, DISPLAY_COLUMNS - 1 },
+           ClearOutputHandler);
 }

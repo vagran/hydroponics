@@ -601,12 +601,9 @@ OnLvlGaugeResult(u16 value __UNUSED)
 u8 tmpMode;
 
 static bool
-TestGraphicsProvider(u8 page, u8 column, u8 *data)
+TestGraphicsProvider(u8, u8, u8 *data)
 {
     static u8 i = 0b11001100;
-    if (column == 63 && page == 3) {
-        return false;
-    }
     *data = i;
     i = ((i << 1) | (i >> 2)) & ~i;
     return true;
@@ -687,6 +684,7 @@ main(void)
     BtnInit();
     PwmInit();
     display.Initialize();
+    display.Clear();
 
     //XXX
     DDRB |= 0x1e;
