@@ -15,9 +15,58 @@ Display display;
 void
 Display::Initialize()
 {
+    curVp.maxCol = 127;
+    curVp.maxPage = 7;
+    curColumn = curVp.minCol;
+    curPage = curVp.minPage;
     state = State::INITIALIZING;
     HandleInitialization();
 }
+
+void
+Display::Output(Viewport vp, GraphicsProvider provider)
+{
+    AtomicSection as;
+    /* Find queue free slot. */
+    u8 idx = curOutReq;
+    while (true) {
+        if (!outQueue[idx].provider) {
+            /* Free slot found. */
+            break;
+        }
+        idx++;
+        if (idx >= MAX_OUT_REQS) {
+            idx = 0;
+        }
+        if (idx == curOutReq) {
+            /* No free slot. */
+            return;
+        }
+    }
+    outQueue[idx].vp = vp;
+    outQueue[idx].provider = provider;
+    scheduler.SchedulePoll();
+}
+
+//static bool
+//TestTransferHandler(I2cBus::TransferStatus status, u8)
+//{
+//    static u8 count;
+//    if (status == I2cBus::TransferStatus::TRANSMIT_READY ||
+//        status == I2cBus::TransferStatus::BYTE_TRANSMITTED) {
+//
+//        if (count == 0) {
+//            i2cBus.TransmitByte(0x40);
+//        } else if (count < 9) {
+//            i2cBus.TransmitByte(0xff);
+//        } else {
+//            return false;
+//        }
+//        count++;
+//        return true;
+//    }
+//    return false;
+//}
 
 void
 Display::Poll()
@@ -25,7 +74,18 @@ Display::Poll()
     AtomicSection as;
     if (state == State::INITIALIZING) {
         HandleInitialization();
+    } else if (state == State::READY) {
+        if (!outInProgress && outQueue[curOutReq].provider) {
+            outInProgress = true;
+            i2cBus.RequestTransfer(DISPLAY_ADDRESS, true, OutputTransferHandler);
+        }
     }
+//    //XXX
+//    static bool testDone;
+//    if (!testDone) {
+//        testDone = true;
+//        i2cBus.RequestTransfer(DISPLAY_ADDRESS, true, TestTransferHandler);
+//    }
 }
 
 void
@@ -39,7 +99,8 @@ Display::HandleInitialization()
         SendCommand(Command::DISPLAY_OFF);
         break;
     case 1:
-        SendCommand(Command::SET_CLOCK_DIV, 0x80);
+        /* Set maximal frequency. */
+        SendCommand(Command::SET_CLOCK_DIV, 0xf0);
         break;
     case 2:
         SendCommand(Command::SET_MULTIPLEX, 0x3f);
@@ -83,6 +144,12 @@ Display::HandleInitialization()
     case 15:
         SendCommand(Command::DISPLAY_ON);
         break;
+    case 16:
+        SendCommand(Command::SET_COLUMN_ADDRESS, curVp.minCol, curVp.maxCol);
+        break;
+    case 17:
+        SendCommand(Command::SET_PAGE_ADDRESS, curVp.minPage, curVp.maxPage);
+        break;
     default:
         state = State::READY;
     }
@@ -93,6 +160,12 @@ bool
 Display::CommandTransferHandler(I2cBus::TransferStatus status, u8)
 {
     return display.HandleCommandTransfer(status);
+}
+
+bool
+Display::OutputTransferHandler(I2cBus::TransferStatus status, u8)
+{
+    return display.HandleOutputTransfer(status);
 }
 
 bool
@@ -123,4 +196,126 @@ Display::HandleCommandTransfer(I2cBus::TransferStatus status)
     cmdSize = 0;
     cmdInProgress = false;
     return false;
+}
+
+bool
+Display::HandleOutputTransfer(I2cBus::TransferStatus status)
+{
+    if (status != I2cBus::TransferStatus::TRANSMIT_READY &&
+        status != I2cBus::TransferStatus::BYTE_TRANSMITTED) {
+
+        /* Output failure. */
+        FinishOutputRequest();
+        return false;
+    }
+
+    if (outVpCtrlSent) {
+        i2cBus.TransmitByte(outVpCmd);
+        outVpCtrlSent = false;
+        return true;
+    }
+
+    OutputReq &req = outQueue[curOutReq];
+
+    /* Set viewport of necessary. */
+    while (outVpState < OutVpState::DONE) {
+        u16 cmd = 0xffff;
+        switch (outVpState) {
+        case OutVpState::NONE:
+            if (curVp.minCol == req.vp.minCol &&
+                curVp.maxCol == req.vp.maxCol &&
+                curColumn == req.vp.minCol) {
+
+                outVpState = OutVpState::PAGE_CMD;
+                break;
+            }
+            outVpState = OutVpState::COL_CMD;
+            /* FALL THROUGH */
+        case OutVpState::COL_CMD:
+            cmd = Command::SET_COLUMN_ADDRESS;
+            outVpState = OutVpState::COL_MIN;
+            break;
+        case OutVpState::COL_MIN:
+            cmd = req.vp.minCol;
+            curVp.minCol = cmd;
+            curColumn = cmd;
+            outVpState = OutVpState::COL_MAX;
+            break;
+        case OutVpState::COL_MAX:
+            cmd = req.vp.maxCol;
+            curVp.maxCol = cmd;
+            outVpState = OutVpState::PAGE_CMD;
+            break;
+        case OutVpState::PAGE_CMD:
+            if (curVp.minPage == req.vp.minPage &&
+                curVp.maxPage == req.vp.maxPage &&
+                curPage == req.vp.minPage) {
+
+                outVpState = OutVpState::DONE;
+                break;
+            }
+            outVpState = OutVpState::PAGE_MIN;
+            cmd = Command::SET_PAGE_ADDRESS;
+            break;
+        case OutVpState::PAGE_MIN:
+            cmd = req.vp.minPage;
+            curVp.minPage = cmd;
+            curPage = cmd;
+            outVpState = OutVpState::PAGE_MAX;
+            break;
+        case OutVpState::PAGE_MAX:
+            cmd = req.vp.maxPage;
+            curVp.maxPage = cmd;
+            outVpState = OutVpState::DONE;
+            break;
+        }
+
+        if (cmd != 0xffff) {
+            i2cBus.TransmitByte(0x80);
+            outVpCtrlSent = true;
+            outVpCmd = cmd;
+            return true;
+        }
+    }
+
+    if (!outDataCtrlSent) {
+        outDataCtrlSent = true;
+        i2cBus.TransmitByte(0x40);
+        return true;
+    }
+
+    u8 data;
+    if (!req.provider(curPage, curColumn, &data)) {
+        /* Request finished. */
+        FinishOutputRequest();
+        return false;
+    }
+    i2cBus.TransmitByte(data);
+    if (curColumn == curVp.maxCol) {
+        curColumn = curVp.minCol;
+        if (curPage == curVp.maxPage) {
+            curPage = curVp.minPage;
+        } else {
+            curPage++;
+        }
+    } else {
+        curColumn++;
+    }
+    return true;
+}
+
+bool
+Display::FinishOutputRequest()
+{
+    outQueue[curOutReq].provider = 0;
+    if (curOutReq == SIZEOF_ARRAY(outQueue)) {
+        curOutReq = 0;
+    } else {
+        curOutReq++;
+    }
+    outVpState = OutVpState::NONE;
+    outVpCtrlSent = false;
+    outInProgress = false;
+    outDataCtrlSent = false;
+    return outQueue[curOutReq].provider;
 }

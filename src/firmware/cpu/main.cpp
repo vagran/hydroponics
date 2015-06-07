@@ -601,43 +601,15 @@ OnLvlGaugeResult(u16 value __UNUSED)
 u8 tmpMode;
 
 static bool
-TestTransfer2(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
+TestGraphicsProvider(u8 page, u8 column, u8 *data)
 {
-    static bool done = false;
-    if (status == I2cBus::TransferStatus::TRANSMIT_READY) {
-        i2cBus.TransmitByte(0x80);
-        return true;
-    } else if (status == I2cBus::TransferStatus::BYTE_TRANSMITTED && !done) {
-        done = true;
-        i2cBus.TransmitByte(0xa5);
-        return true;
+    static u8 i = 0b11001100;
+    if (column == 63 && page == 3) {
+        return false;
     }
-    return false;
-}
-
-static u16
-StartTransfer2()
-{
-    i2cBus.RequestTransfer(0x3c, true, TestTransfer2);
-    AVR_BIT_SET8(PORTB, 2);//XXX
-    return 0;
-}
-
-static bool
-TestTransfer1(I2cBus::TransferStatus status __UNUSED, u8 data __UNUSED)
-{
-    static bool done = false;
-    if (status == I2cBus::TransferStatus::TRANSMIT_READY) {
-        i2cBus.TransmitByte(0x80);
-        return true;
-    } else if (status == I2cBus::TransferStatus::BYTE_TRANSMITTED && !done) {
-        done = true;
-        i2cBus.TransmitByte(0xaf);
-        scheduler.ScheduleTask(StartTransfer2, TASK_DELAY_MS(100));
-        return true;
-    }
-    AVR_BIT_SET8(PORTB, 4);//XXX
-    return false;
+    *data = i;
+    i = ((i << 1) | (i >> 2)) & ~i;
+    return true;
 }
 
 static inline void
@@ -646,7 +618,7 @@ OnButtonPressed()
     //XXX
     tmpMode = ~tmpMode;
 
-    i2cBus.RequestTransfer(0x3c, true, TestTransfer1);
+    display.Output(Display::Viewport {2, 3, 32, 63}, TestGraphicsProvider);
 }
 
 static inline void
