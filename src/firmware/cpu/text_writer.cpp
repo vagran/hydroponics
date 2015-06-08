@@ -70,6 +70,13 @@ TextWriter::OutputHandler(u8 page, u8 column, u8 *data)
     Req &req = reqQueue[curReq];
     u8 _data;
     while (true) {
+        if (curCharCol == 0 && (req.vp.maxCol - column + 1) < FONT_WIDTH) {
+            /* Write next character on a new line if no more space in the
+             * current line.
+             */
+            _data = 0;
+            break;
+        }
         if (curCharCol < FONT_WIDTH) {
             if (curChar >= 0x20) {
                 _data = pgm_read_byte(&fontData[curChar - 0x20][curCharCol]);
@@ -94,7 +101,9 @@ TextWriter::OutputHandler(u8 page, u8 column, u8 *data)
                 return false;
             }
         }
-        if (curCharCol < FONT_WIDTH + CHAR_SPACE_WIDTH) {
+        if (curCharCol < FONT_WIDTH + CHAR_SPACE_WIDTH &&
+            column != req.vp.minCol) { /* Page break resets space. */
+
             _data = 0;
             curCharCol++;
             break;
