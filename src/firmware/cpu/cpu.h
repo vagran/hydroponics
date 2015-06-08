@@ -109,5 +109,6 @@ extern Clock clock;
 
 #include "i2c.h"
 #include "display.h"
+#include "text_writer.h"
 
 #endif /* CPU_H_ */
