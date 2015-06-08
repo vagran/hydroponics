@@ -618,7 +618,8 @@ OnButtonPressed()
     static bool inv = false;
 
     //display.Output(Display::Viewport {2, 3, 32, 63}, TestGraphicsProvider);
-    textWriter.Write(Display::Viewport {1, 2, 0, 127}, "Warning! Low water.", inv);
+    textWriter.Write(Display::Viewport {1, 2, 0, 127},
+        "*+Iacebdpqghoswyz1234567890", inv);//"Warning! Low water.", inv);
     inv = !inv;
 }
 
