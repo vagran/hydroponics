@@ -46,7 +46,7 @@ TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
             return;
         }
     }
-    Req &req = reqQueue[idx];
+    Request &req = reqQueue[idx];
     req.vp = vp;
     req.text = text;
     req.inversed = inversed;
@@ -59,15 +59,15 @@ TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
 }
 
 bool
-TextWriter::_OutputHandler(u8 page, u8 column, u8 *data)
+TextWriter::_OutputHandler(u8 column, u8 page, u8 *data)
 {
-    return textWriter.OutputHandler(page, column, data);
+    return textWriter.OutputHandler(column, page, data);
 }
 
 bool
-TextWriter::OutputHandler(u8 page, u8 column, u8 *data)
+TextWriter::OutputHandler(u8 column, u8 page, u8 *data)
 {
-    Req &req = reqQueue[curReq];
+    Request &req = reqQueue[curReq];
     u8 _data;
     while (true) {
         if (curCharCol == 0 && (req.vp.maxCol - column + 1) < FONT_WIDTH) {
@@ -94,9 +94,6 @@ TextWriter::OutputHandler(u8 page, u8 column, u8 *data)
             }
             req.text++;
             if (!curChar) {
-                if (req.handler) {
-                    req.handler();
-                }
                 NextRequest();
                 return false;
             }
@@ -116,11 +113,7 @@ TextWriter::OutputHandler(u8 page, u8 column, u8 *data)
         *data = _data;
     }
     if (page == req.vp.maxPage && column == req.vp.maxCol) {
-        if (req.handler) {
-            req.handler();
-        }
         NextRequest();
-        return false;
     }
     return true;
 }
@@ -129,7 +122,7 @@ bool
 TextWriter::StartRequest()
 {
     while (true) {
-        Req &req = reqQueue[curReq];
+        Request &req = reqQueue[curReq];
         if (!req.text) {
             return false;
         }
@@ -140,9 +133,6 @@ TextWriter::StartRequest()
         }
         req.text++;
         if (!curChar) {
-            if (req.handler) {
-                req.handler();
-            }
             NextRequest();
             continue;
         }
@@ -156,6 +146,9 @@ TextWriter::StartRequest()
 void
 TextWriter::NextRequest()
 {
+    if (reqQueue[curReq].handler) {
+        reqQueue[curReq].handler();
+    }
     reqQueue[curReq].text = 0;
     if (curReq == SIZEOF_ARRAY(reqQueue)) {
         curReq = 0;

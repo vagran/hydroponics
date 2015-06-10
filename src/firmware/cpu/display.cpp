@@ -291,7 +291,7 @@ Display::HandleOutputTransfer(I2cBus::TransferStatus status)
     }
 
     u8 data;
-    if (!req.provider(curPage, curColumn, &data)) {
+    if (!req.provider(curColumn, curPage, &data)) {
         /* Request finished. */
         FinishOutputRequest();
         return false;
@@ -339,6 +339,6 @@ ClearOutputHandler(u8, u8, u8 *data)
 void
 Display::Clear()
 {
-    Output(Viewport { 0, DISPLAY_PAGES - 1, 0, DISPLAY_COLUMNS - 1 },
+    Output(Viewport { 0, DISPLAY_COLUMNS - 1, 0, DISPLAY_PAGES - 1 },
            ClearOutputHandler);
 }

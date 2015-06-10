@@ -602,15 +602,6 @@ OnLvlGaugeResult(u16 value __UNUSED)
 
 u8 tmpMode;
 
-//static bool
-//TestGraphicsProvider(u8, u8, u8 *data)
-//{
-//    static u8 i = 0b11001100;
-//    *data = i;
-//    i = ((i << 1) | (i >> 2)) & ~i;
-//    return true;
-//}
-
 static inline void
 OnButtonPressed()
 {
@@ -619,9 +610,12 @@ OnButtonPressed()
 
     static bool inv = false;
 
-    //display.Output(Display::Viewport {2, 3, 32, 63}, TestGraphicsProvider);
-    textWriter.WritePgm(Display::Viewport {1, 2, 0, 127},
+    textWriter.Write(Display::Viewport {0, 127, 1, 2},
         strings.Test, inv);//"Warning! Low water.", inv);
+
+    bitmapWriter.Write(8, 6, &bitmaps.Thermometer, inv);
+    bitmapWriter.Write(16, 6, &bitmaps.Sun, inv);
+
     inv = !inv;
 }
 
@@ -683,6 +677,7 @@ adk::PollFunc()
     i2cBus.Poll();
     display.Poll();
     textWriter.Poll();
+    bitmapWriter.Poll();
 }
 
 int

@@ -21,14 +21,14 @@ public:
     Poll();
 
     inline void
-    Write(Display::Viewport vp, const char *text, bool inversed = false,
+    Write(Display::Viewport vp, char *text, bool inversed = false,
           DoneHandler handler = 0)
     {
         Write(vp, text, inversed, handler, false);
     }
 
     inline void
-    WritePgm(Display::Viewport vp, PGM_P text, bool inversed = false,
+    Write(Display::Viewport vp, const char *text, bool inversed = false,
              DoneHandler handler = 0)
     {
         Write(vp, text, inversed, handler, true);
@@ -42,7 +42,7 @@ private:
         CHAR_SPACE_WIDTH = 1
     };
 
-    struct Req {
+    struct Request {
         const char *text;
         DoneHandler handler;
         Display::Viewport vp;
@@ -51,7 +51,7 @@ private:
            reserved:6;
     } __PACKED;
 
-    Req reqQueue[MAX_REQUESTS];
+    Request reqQueue[MAX_REQUESTS];
     /** Current request index in the queue. */
     u8 curReq:3,
        curCharCol:3,
@@ -69,10 +69,10 @@ private:
           DoneHandler handler, bool isPgm);
 
     static bool
-    _OutputHandler(u8 page, u8 column, u8 *data);
+    _OutputHandler(u8 column, u8 page, u8 *data);
 
     bool
-    OutputHandler(u8 page, u8 column, u8 *data);
+    OutputHandler(u8 column, u8 page, u8 *data);
 
     /** Start current request processing.
      *

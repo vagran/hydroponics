@@ -24,19 +24,19 @@ public:
 
     /** Viewport for graphics output. */
     struct Viewport {
-        u8 minPage:3, maxPage:3;
         u8 minCol, maxCol;
+        u8 minPage:3, maxPage:3;
     } __PACKED;
 
     /** Handler for providing graphics data.
      *
-     * @param page Page for currently requested data.
      * @param column Column for currently requested data.
+     * @param page Page for currently requested data.
      * @param data Data byte should be stored there.
      * @return True if data byte was stored, false if no more data and the
      *      handler should not be called anymore.
      */
-    typedef bool (*GraphicsProvider)(u8 page, u8 column, u8 *data);
+    typedef bool (*GraphicsProvider)(u8 column, u8 page, u8 *data);
 
     void
     Initialize();

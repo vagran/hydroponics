@@ -18,7 +18,8 @@
 class Strings {
 public:
     DEF_STR(Test, "*+Iacebdpqghoswyz1234567890")
-};
+    DEF_STR(Test2, "Test string")
+} __PACKED;
 
 extern const Strings strings PROGMEM;
 
