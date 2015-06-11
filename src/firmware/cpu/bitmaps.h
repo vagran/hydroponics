@@ -57,8 +57,6 @@ public:
         0b00100100
     )
 
-    DEF_BITMAP(Test2, 1, 42, 45)
-    DEF_BITMAP(Test3, 2, 42, 43, 44, 45)
 } __PACKED;
 
 extern const Bitmaps bitmaps PROGMEM;

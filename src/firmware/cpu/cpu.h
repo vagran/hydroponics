@@ -39,6 +39,7 @@ AdcSleepEnabled();
 /** Pin for level gauge echo line. */
 #define LVL_GAUGE_ECHO_PIN      0
 
+
 /** Port for the first PWM channel. */
 #define PWM1_PORT               B
 /** Pin for the first PWM channel. */
@@ -59,6 +60,19 @@ AdcSleepEnabled();
 #define PWM3_PIN                4
 /** Inverse output for the third (low frequency) PWM channel when TRUE. */
 #define PWM3_INVERSE            TRUE
+
+void
+Pwm1Set(u8 value);
+u8
+Pwm1Get();
+void
+Pwm2Set(u8 value);
+u8
+Pwm2Get();
+void
+Pwm3Set(u8 value);
+u8
+Pwm3Get();
 
 
 /** Clock ticks frequency. */

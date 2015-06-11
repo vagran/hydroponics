@@ -5,7 +5,8 @@
  */
 
 /** @file variant.h
- * TODO insert description here.
+ * Variant class implementation. Quite simplified relatively to what should be
+ * done for desktop.
  */
 
 #ifndef VARIANT_H_
@@ -145,6 +146,13 @@ public:
         return *SelBase<Type>::GetPtr();
     }
 
+    /** Get pointer to the storage. */
+    void *
+    GetPtr()
+    {
+        return BaseType::buf;
+    }
+
     /** Construct value of the specified type. */
     template <typename Type, typename... Args>
     void
@@ -162,6 +170,21 @@ public:
         if (BaseType::curType) {
             BaseType::DisengageImpl();
         }
+    }
+
+    /** Get type code for the specified wrapped type. */
+    template <typename Type>
+    static constexpr u8
+    GetTypeCode()
+    {
+        return SelBase<Type>::typeCode;
+    }
+
+    /** Type code for currently stored type. Zero if not engaged. */
+    u8
+    CurType()
+    {
+        return BaseType::curType;
     }
 
 private:

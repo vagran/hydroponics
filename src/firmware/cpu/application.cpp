@@ -14,18 +14,38 @@ using namespace adk;
 
 Application app;
 
-class A {
-public:
-    int i;
-    A(int i):i(i){}
-};
-
-Variant<int, A, u8> v;
-
 void
 Application::Poll()
 {
-    v.Get<int>();
-    v.Disengage();
-    v.Engage<int>(1.0);
+    Page *page = CurPage();
+    if (page) {
+        page->Poll();
+    }
+}
+
+void
+Application::OnButtonPressed()
+{
+    Page *page = CurPage();
+    if (page) {
+        page->OnButtonPressed();
+    }
+}
+
+void
+Application::OnButtonLongPressed()
+{
+    Page *page = CurPage();
+    if (page) {
+        page->OnButtonLongPressed();
+    }
+}
+
+void
+Application::OnRotEncClick(bool dir)
+{
+    Page *page = CurPage();
+    if (page) {
+        page->OnRotEncClick(dir);
+    }
 }

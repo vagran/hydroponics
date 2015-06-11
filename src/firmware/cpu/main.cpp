@@ -12,19 +12,6 @@ const Strings strings PROGMEM;
 static inline void
 OnAdcResult(u8 type, u16 value);
 
-static inline void
-OnButtonPressed();
-
-static inline void
-OnButtonLongPressed();
-
-/** Invoked when rotary encoder rotated on one click.
- *
- * @param dir CW direction when true, CCW when false.
- */
-static void
-OnRotEncClick(bool dir);
-
 /** Global bit-field variables for saving RAM space. Should be accessed with
  * interrupts disabled.
  */
@@ -183,7 +170,7 @@ BtnPoll()
     /* Active is pull to ground. */
     if (AVR_BIT_GET8(AVR_REG_PIN(BUTTON_PORT), BUTTON_PIN)) {
         if (pressCnt >= BTN_JITTER_DELAY && pressCnt < BTN_LONG_DELAY) {
-            OnButtonPressed();
+            app.OnButtonPressed();
         }
         pressCnt = 0;
         return 1;
@@ -193,7 +180,7 @@ BtnPoll()
     }
     pressCnt++;
     if (pressCnt == BTN_LONG_DELAY) {
-        OnButtonLongPressed();
+        app.OnButtonLongPressed();
     }
     return 1;
 }
@@ -315,7 +302,7 @@ private:
             }
             stepCount = 0;
             if (dir != 0) {
-                OnRotEncClick(dir > 0);
+                app.OnRotEncClick(dir > 0);
             }
         }
     }
@@ -598,67 +585,6 @@ static void
 OnLvlGaugeResult(u16 value __UNUSED)
 {
     //LvlGaugeStart();//XXX
-}
-
-u8 tmpMode;
-
-static inline void
-OnButtonPressed()
-{
-    //XXX
-    tmpMode = ~tmpMode;
-
-    static bool inv = false;
-
-    textWriter.Write(Display::Viewport {0, 127, 1, 2},
-        strings.Test, inv);//"Warning! Low water.", inv);
-
-    bitmapWriter.Write(8, 6, &bitmaps.Thermometer, inv);
-    bitmapWriter.Write(16, 6, &bitmaps.Sun, inv);
-
-    inv = !inv;
-}
-
-static inline void
-OnButtonLongPressed()
-{
-    //XXX
-}
-
-void
-OnRotEncClick(bool dir __UNUSED)
-{
-//    u8 mask = PORTB & 0x1e;
-//    if (dir) {
-//        mask = (mask >> 1) & 0x1e;
-//        if (mask == 0) {
-//            mask = 0x10;
-//        }
-//    } else {
-//        mask = (mask << 1) & 0x1e;
-//        if (mask == 0) {
-//            mask = 0x2;
-//        }
-//    }
-//    PORTB = (PORTB & ~0x1e) | mask;
-
-    if (tmpMode) {
-        u8 pwm = Pwm3Get();
-        if (dir && pwm < 255) {
-            pwm++;
-        } else if (!dir && pwm > 0) {
-            pwm--;
-        }
-        Pwm3Set(pwm);
-    } else {
-        u8 pwm = Pwm2Get();
-        if (dir && pwm < 255) {
-            pwm++;
-        } else if (!dir && pwm > 0) {
-            pwm--;
-        }
-        Pwm2Set(pwm);
-    }
 }
 
 u16
