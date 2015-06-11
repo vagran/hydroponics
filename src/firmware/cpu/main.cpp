@@ -678,6 +678,7 @@ adk::PollFunc()
     display.Poll();
     textWriter.Poll();
     bitmapWriter.Poll();
+    app.Poll();
 }
 
 int

@@ -107,11 +107,14 @@ extern Clock clock;
 #define TASK_DELAY_S(__s) \
     ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
+#include "variant.h"
+
 #include "strings.h"
 #include "i2c.h"
 #include "display.h"
 #include "text_writer.h"
 #include "bitmap.h"
 #include "bitmaps.h"
+#include "application.h"
 
 #endif /* CPU_H_ */
