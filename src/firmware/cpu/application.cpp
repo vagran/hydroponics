@@ -14,6 +14,11 @@ using namespace adk;
 
 Application app;
 
+Application::Application()
+{
+    curPage.Engage<MainPage>();
+}
+
 void
 Application::Poll()
 {

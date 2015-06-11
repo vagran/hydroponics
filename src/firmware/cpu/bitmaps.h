@@ -38,11 +38,11 @@ public:
 
     /** Thermometer icon. */
     DEF_BITMAP(Thermometer, 1,
-        0b00010100,
-        0b01111110,
+        0b01101010,
+        0b10011110,
         0b10000001,
-        0b01111110,
-        0b00010100
+        0b10011110,
+        0b01101010
     )
 
     /** Sun icon. */

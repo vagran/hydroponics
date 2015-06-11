@@ -43,6 +43,8 @@ public:
 /** Encapsulates high-level application logic. */
 class Application {
 public:
+    Application();
+
     void
     Poll();
 

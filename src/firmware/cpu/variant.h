@@ -54,9 +54,9 @@ public:
         }
     }
 protected:
-    static const u8 typeCode = code;
+    static constexpr u8 typeCode = code;
 
-    Type *
+    inline Type *
     GetPtr()
     {
         //XXX assert curType == typeCode
@@ -67,7 +67,9 @@ protected:
     void
     EngageImpl(Args... args)
     {
+        // assert !curType
         new(GetPtr()) Type(args...);
+        Base::curType = typeCode;
     }
 
     void
