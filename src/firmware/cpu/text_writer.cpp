@@ -27,7 +27,7 @@ TextWriter::Poll()
 
 void
 TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
-                  DoneHandler handler, bool isPgm)
+                  bool fillVp, DoneHandler handler, bool isPgm)
 {
     AtomicSection as;
     /* Find queue free slot. */
@@ -50,6 +50,7 @@ TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
     req.vp = vp;
     req.text = text;
     req.inversed = inversed;
+    req.fillVp = fillVp;
     req.handler = handler;
     req.isPgm = isPgm;
     if (idx == curReq) {
@@ -70,6 +71,10 @@ TextWriter::OutputHandler(u8 column, u8 page, u8 *data)
     Request &req = reqQueue[curReq];
     u8 _data;
     while (true) {
+        if (fillingTail) {
+            _data = 0;
+            break;
+        }
         if (curCharCol == 0 && (req.vp.maxCol - column + 1) < FONT_WIDTH) {
             /* Write next character on a new line if no more space in the
              * current line.
@@ -94,6 +99,11 @@ TextWriter::OutputHandler(u8 column, u8 page, u8 *data)
             }
             req.text++;
             if (!curChar) {
+                if (req.fillVp) {
+                    fillingTail = true;
+                    _data = 0;
+                    break;
+                }
                 NextRequest();
                 return false;
             }
@@ -137,6 +147,7 @@ TextWriter::StartRequest()
             continue;
         }
         curCharCol = 0;
+        fillingTail = false;
         reqInProgress = true;
         display.Output(req.vp, _OutputHandler);
         return true;

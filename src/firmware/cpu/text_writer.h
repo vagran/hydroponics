@@ -20,18 +20,27 @@ public:
     void
     Poll();
 
+    /** Write text to display.
+     *
+     * @param vp Viewport to write text in.
+     * @param text Text to write.
+     * @param inversed Inverse pixels.
+     * @param fillVp Fill the specified viewport fully - even after all
+     *      characters written.
+     * @param handler Handler to call when done.
+     */
     inline void
     Write(Display::Viewport vp, char *text, bool inversed = false,
-          DoneHandler handler = nullptr)
+          bool fillVp = false, DoneHandler handler = nullptr)
     {
-        Write(vp, text, inversed, handler, false);
+        Write(vp, text, inversed, fillVp, handler, false);
     }
 
     inline void
     Write(Display::Viewport vp, const char *text, bool inversed = false,
-          DoneHandler handler = nullptr)
+          bool fillVp = false, DoneHandler handler = nullptr)
     {
-        Write(vp, text, inversed, handler, true);
+        Write(vp, text, inversed, fillVp, handler, true);
     }
 
 private:
@@ -48,15 +57,18 @@ private:
         Display::Viewport vp;
         u8 isPgm:1,
            inversed:1,
-           reserved:6;
+           fillVp:1,
+           reserved:5;
     } __PACKED;
 
     Request reqQueue[MAX_REQUESTS];
     /** Current request index in the queue. */
     u8 curReq:3,
-       curCharCol:3,
     /** Current column in the character. One additional column for space. */
-       reserved:2,
+       curCharCol:3,
+    /** Text fully written, filling trailing viewport space. */
+       fillingTail:1,
+       reserved:1,
 
     /** Next character to output. */
        curChar:7,
@@ -65,7 +77,7 @@ private:
 
 
     void
-    Write(Display::Viewport vp, const char *text, bool inversed,
+    Write(Display::Viewport vp, const char *text, bool inversed, bool fillVp,
           DoneHandler handler, bool isPgm);
 
     static bool

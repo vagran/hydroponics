@@ -105,13 +105,14 @@ Menu::Draw()
     drawState = DrawState::ITEMS;
     curDrawItem = 0;
     curDrawItemText = SkipItems(items, topItem);
-    bool inv = topItem + curDrawItem == curItem;
+    bool isSel = topItem + curDrawItem == curItem;
     if (isPgm) {
         textWriter.Write(Display::Viewport {LEFT_GAP, 127, 0, 0},
-                         curDrawItemText, inv, _DrawHandler);
+                         curDrawItemText, isSel, true, _DrawHandler);
     } else {
         textWriter.Write(Display::Viewport {LEFT_GAP, 127, 0, 0},
-                         const_cast<char *>(curDrawItemText), inv, _DrawHandler);
+                         const_cast<char *>(curDrawItemText), isSel, true,
+                         _DrawHandler);
     }
 }
 
@@ -135,13 +136,14 @@ Menu::DrawHandler()
 
         curDrawItem++;
         curDrawItemText = SkipItems(curDrawItemText, 1);
-        bool inv = topItem + curDrawItem == curItem;
+        bool isSel = topItem + curDrawItem == curItem;
         if (isPgm) {
             textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
-                             curDrawItemText, inv, _DrawHandler);
+                             curDrawItemText, isSel, true, _DrawHandler);
         } else {
             textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
-                             const_cast<char *>(curDrawItemText), inv, _DrawHandler);
+                             const_cast<char *>(curDrawItemText), isSel, true,
+                             _DrawHandler);
         }
         return;
     }
@@ -149,18 +151,20 @@ Menu::DrawHandler()
     while (drawState == DrawState::UP_ICON) {
         drawState = DrawState::DOWN_ICON;
         if (topItem == 0) {
-            break;
+            bitmapWriter.Clear(0, 0, &bitmaps.Up, false, _DrawHandler);
+        } else {
+            bitmapWriter.Write(0, 0, &bitmaps.Up, false, _DrawHandler);
         }
-        bitmapWriter.Write(0, 0, &bitmaps.Up, false, _DrawHandler);
         return;
     }
 
     while (drawState == DrawState::DOWN_ICON) {
         drawState = DrawState::DONE;
         if (numItems - topItem <= NUM_LINES) {
-            break;
+            bitmapWriter.Clear(0, 7, &bitmaps.Down, false, _DrawHandler);
+        } else {
+            bitmapWriter.Write(0, 7, &bitmaps.Down, false, _DrawHandler);
         }
-        bitmapWriter.Write(0, 7, &bitmaps.Down, false, _DrawHandler);
         return;
     }
 
@@ -192,16 +196,10 @@ Menu::OnRotEncClick(bool dir)
     } else if (curItem > 0) {
         curItem--;
     }
-    bool needClear = false;
     if (topItem < curItem && curItem - topItem >= NUM_LINES) {
         topItem = curItem + 1 - NUM_LINES;
-        needClear = true;
     } else if (topItem > curItem) {
         topItem = curItem;
-        needClear = true;
-    }
-    if (needClear) {
-        display.Clear();
     }
     Draw();
 }
