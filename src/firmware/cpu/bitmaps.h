@@ -57,6 +57,24 @@ public:
         0b00100100
     )
 
+    /** Menu up icon. */
+    DEF_BITMAP(Up, 1,
+        0b00010000,
+        0b00011000,
+        0b00011100,
+        0b00011000,
+        0b00010000
+    )
+
+    /** Menu down icon. */
+    DEF_BITMAP(Down, 1,
+        0b00010000,
+        0b00110000,
+        0b01110000,
+        0b00110000,
+        0b00010000
+    )
+
 } __PACKED;
 
 extern const Bitmaps bitmaps PROGMEM;

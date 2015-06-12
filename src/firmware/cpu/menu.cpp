@@ -44,11 +44,6 @@ Menu::Initialize()
         }
     }
 
-    //XXX
-    for (u8 i = 0; i < numItems; i++) {
-        AVR_BIT_SET8(PINB, 4);
-    }
-
     if (curItem >= numItems) {
         curItem = numItems - 1;
     }
@@ -88,7 +83,6 @@ Menu::SkipItems(const char *p, u8 num)
         } else {
             prevNull = false;
             if (!charSeen) {
-                numItems++;
                 charSeen = true;
             }
         }
@@ -131,23 +125,46 @@ Menu::DrawHandler()
         return;
     }
 
-    if (curDrawItem >= NUM_LINES - 1 ||
-        curDrawItem + topItem >= numItems - 1) {
+    while (drawState == DrawState::ITEMS) {
+        if (curDrawItem >= NUM_LINES - 1 ||
+            curDrawItem + topItem >= numItems - 1) {
 
-        drawInProgress = false;
+            drawState = DrawState::UP_ICON;
+            break;
+        }
+
+        curDrawItem++;
+        curDrawItemText = SkipItems(curDrawItemText, 1);
+        bool inv = topItem + curDrawItem == curItem;
+        if (isPgm) {
+            textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
+                             curDrawItemText, inv, _DrawHandler);
+        } else {
+            textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
+                             const_cast<char *>(curDrawItemText), inv, _DrawHandler);
+        }
         return;
     }
 
-    curDrawItem++;
-    curDrawItemText = SkipItems(curDrawItemText, 1);
-    bool inv = topItem + curDrawItem == curItem;
-    if (isPgm) {
-        textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
-                         curDrawItemText, inv, _DrawHandler);
-    } else {
-        textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
-                         const_cast<char *>(curDrawItemText), inv, _DrawHandler);
+    while (drawState == DrawState::UP_ICON) {
+        drawState = DrawState::DOWN_ICON;
+        if (topItem == 0) {
+            break;
+        }
+        bitmapWriter.Write(0, 0, &bitmaps.Up, false, _DrawHandler);
+        return;
     }
+
+    while (drawState == DrawState::DOWN_ICON) {
+        drawState = DrawState::DONE;
+        if (numItems - topItem <= NUM_LINES) {
+            break;
+        }
+        bitmapWriter.Write(0, 7, &bitmaps.Down, false, _DrawHandler);
+        return;
+    }
+
+    drawInProgress = false;
 }
 
 void

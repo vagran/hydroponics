@@ -47,6 +47,21 @@ public:
         Write(column, page, bitmap, inversed, handler, true);
     }
 
+    /** Clear space occupied by the provided bitmap. */
+    inline void
+    Clear(u8 column, u8 page, Bitmap *bitmap, bool inversed = false,
+          DoneHandler handler = nullptr)
+    {
+        Write(column, page, bitmap, inversed, handler, false, true);
+    }
+
+    inline void
+    Clear(u8 column, u8 page, const Bitmap *bitmap, bool inversed = false,
+          DoneHandler handler = nullptr)
+    {
+        Write(column, page, bitmap, inversed, handler, true, true);
+    }
+
 private:
     enum {
         MAX_REQUESTS = 8
@@ -62,7 +77,9 @@ private:
         /** Top page for drawing the bitmap. */
            page:3,
            inversed: 1,
-           reserved:4;
+        /** Clear space instead of drawing bitmap. */
+           clear:1,
+           reserved:3;
 
         const Bitmap *bmp;
         DoneHandler handler;
@@ -83,7 +100,7 @@ private:
 
     void
     Write(u8 column, u8 page, const Bitmap *bitmap, bool inversed,
-          DoneHandler handler, bool isPgm);
+          DoneHandler handler, bool isPgm, bool clear = false);
 
     /** Start current request processing.
      *

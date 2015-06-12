@@ -27,7 +27,7 @@ BitmapWriter::Poll()
 
 void
 BitmapWriter::Write(u8 column, u8 page, const Bitmap *bitmap, bool inversed,
-                    DoneHandler handler, bool isPgm)
+                    DoneHandler handler, bool isPgm, bool clear)
 {
     AtomicSection as;
     /* Find queue free slot. */
@@ -53,6 +53,7 @@ BitmapWriter::Write(u8 column, u8 page, const Bitmap *bitmap, bool inversed,
     req.inversed = inversed;
     req.handler = handler;
     req.isPgm = isPgm;
+    req.clear = clear;
     if (idx == curReq) {
         /* Start output. */
         StartRequest();
@@ -70,8 +71,10 @@ BitmapWriter::StartRequest()
     if (req.isPgm) {
         curBmpWidth = pgm_read_byte(&req.bmp->numColumns);
         curBmpHeight = pgm_read_byte(&req.bmp->numPages);
-        curBmpData = reinterpret_cast<const u8 *>(pgm_read_word(&req.bmp->data));
-        curBmpData += reinterpret_cast<uintptr_t>(&bitmaps);
+        if (!req.clear) {
+            curBmpData = reinterpret_cast<const u8 *>(pgm_read_word(&req.bmp->data));
+            curBmpData += reinterpret_cast<uintptr_t>(&bitmaps);
+        }
     } else {
         curBmpWidth = req.bmp->numColumns;
         curBmpHeight = req.bmp->numPages;
@@ -110,12 +113,16 @@ BitmapWriter::OutputHandler(u8 column, u8 page, u8 *data)
 {
     Request &req = reqQueue[curReq];
     u8 _data;
-    if (req.isPgm) {
-        _data = pgm_read_byte(curBmpData);
+    if (req.clear) {
+        _data = 0;
     } else {
-        _data = *curBmpData;
+        if (req.isPgm) {
+            _data = pgm_read_byte(curBmpData);
+        } else {
+            _data = *curBmpData;
+        }
+        curBmpData++;
     }
-    curBmpData++;
     if (req.inversed) {
         *data = ~_data;
     } else {

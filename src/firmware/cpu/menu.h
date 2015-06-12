@@ -49,7 +49,10 @@ private:
     };
 
     enum DrawState {
-        ITEMS
+        ITEMS,
+        UP_ICON,
+        DOWN_ICON,
+        DONE
     };
 
     const char *items;
