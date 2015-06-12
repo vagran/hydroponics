@@ -121,9 +121,23 @@ Menu::DrawHandler()
 {
     AtomicSection as;
 
-    //XXX
+    if (curDrawItem >= NUM_LINES - 1 ||
+        curDrawItem + topItem >= numItems - 1) {
 
-    drawInProgress = false;
+        drawInProgress = false;
+        return;
+    }
+
+    curDrawItem++;
+    curDrawItemText = SkipItems(curDrawItemText, 1);
+    bool inv = topItem + curDrawItem == curItem;
+    if (isPgm) {
+        textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
+                         curDrawItemText, inv, _DrawHandler);
+    } else {
+        textWriter.Write(Display::Viewport {LEFT_GAP, 127, curDrawItem, curDrawItem},
+                         const_cast<char *>(curDrawItemText), inv, _DrawHandler);
+    }
 }
 
 void
@@ -135,13 +149,34 @@ Menu::_DrawHandler()
 void
 Menu::OnButtonPressed()
 {
-
+    if (!closeRequested) {
+        OnItemSelected(curItem);
+    }
 }
 
 void
-Menu::OnRotEncClick(bool dir __UNUSED/*XXX*/)
+Menu::OnRotEncClick(bool dir)
 {
-
+    AtomicSection as;
+    if (dir) {
+        if (curItem < numItems - 1) {
+            curItem++;
+        }
+    } else if (curItem > 0) {
+        curItem--;
+    }
+    bool needClear = false;
+    if (topItem < curItem && curItem - topItem >= NUM_LINES) {
+        topItem = curItem + 1 - NUM_LINES;
+        needClear = true;
+    } else if (topItem > curItem) {
+        topItem = curItem;
+        needClear = true;
+    }
+    if (needClear) {
+        display.Clear();
+    }
+    Draw();
 }
 
 void

@@ -14,12 +14,16 @@ public:
     /** Additional null terminator after last item. */
     Menu(char *items, u8 pos = 0):
         items(items), isPgm(false), curItem(pos)
-    {}
+    {
+        Initialize();
+    }
 
     /** Additional null terminator after last item. */
     Menu(const char *items, u8 pos = 0):
         items(items), isPgm(true), curItem(pos)
-    {}
+    {
+        Initialize();
+    }
 
     /** Override to process selection event. */
     virtual void

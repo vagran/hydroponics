@@ -20,6 +20,9 @@ public:
     MainMenu(u8 pos = 0):
         Menu(strings.MainMenu, pos)
     {}
+
+    virtual void
+    OnItemSelected(u8 idx) override;
 };
 
 #endif /* MENUS_H_ */
