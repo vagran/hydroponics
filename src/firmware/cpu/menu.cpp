@@ -56,6 +56,8 @@ Menu::Initialize()
     } else {
         topItem = 0;
     }
+
+    Draw();
 }
 
 const char *
@@ -100,6 +102,7 @@ Menu::Draw()
         drawPending = true;
         return;
     }
+    drawInProgress = true;
     drawState = DrawState::ITEMS;
     curDrawItem = 0;
     curDrawItemText = SkipItems(items, topItem);

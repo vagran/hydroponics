@@ -22,14 +22,14 @@ public:
 
     inline void
     Write(Display::Viewport vp, char *text, bool inversed = false,
-          DoneHandler handler = 0)
+          DoneHandler handler = nullptr)
     {
         Write(vp, text, inversed, handler, false);
     }
 
     inline void
     Write(Display::Viewport vp, const char *text, bool inversed = false,
-             DoneHandler handler = 0)
+          DoneHandler handler = nullptr)
     {
         Write(vp, text, inversed, handler, true);
     }

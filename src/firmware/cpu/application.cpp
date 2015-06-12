@@ -16,8 +16,7 @@ Application app;
 
 Application::Application()
 {
-    curPage.Engage<MainPage>();
-    curPageCode = Pages::MAIN;
+    curPageCode = Pages::NONE;
     nextPageCode = Pages::MAIN;
 }
 
@@ -26,8 +25,11 @@ Application::Poll()
 {
     AtomicSection as;
     Page *page = CurPage();
-    if (nextPageCode != curPageCode && page && page->RequestClose()) {
-        SetPage(static_cast<Pages>(nextPageCode));
+    if (nextPageCode != curPageCode) {
+        if (!page || page->RequestClose()) {
+            SetPage(static_cast<Pages>(nextPageCode));
+            page = CurPage();
+        }
     }
     if (page) {
         page->Poll();
@@ -65,6 +67,9 @@ void
 Application::SetPage(Pages page)
 {
     switch (page) {
+    case Pages::NONE:
+        curPage.Disengage();
+        break;
     case Pages::MAIN:
         curPage.Engage<MainPage>();
         break;

@@ -35,14 +35,14 @@ public:
 
     inline void
     Write(u8 column, u8 page, Bitmap *bitmap, bool inversed = false,
-          DoneHandler handler = 0)
+          DoneHandler handler = nullptr)
     {
         Write(column, page, bitmap, inversed, handler, false);
     }
 
     inline void
     Write(u8 column, u8 page, const Bitmap *bitmap, bool inversed = false,
-          DoneHandler handler = 0)
+          DoneHandler handler = nullptr)
     {
         Write(column, page, bitmap, inversed, handler, true);
     }

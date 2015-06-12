@@ -60,6 +60,8 @@ public:
 class Application {
 public:
     enum Pages {
+        /** Used as initial value. */
+        NONE,
         MAIN,
         MAIN_MENU
     };
