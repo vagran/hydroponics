@@ -17,12 +17,18 @@ Application app;
 Application::Application()
 {
     curPage.Engage<MainPage>();
+    curPageCode = Pages::MAIN;
+    nextPageCode = Pages::MAIN;
 }
 
 void
 Application::Poll()
 {
+    AtomicSection as;
     Page *page = CurPage();
+    if (nextPageCode != curPageCode && page && page->RequestClose()) {
+        SetPage(static_cast<Pages>(nextPageCode));
+    }
     if (page) {
         page->Poll();
     }
@@ -53,4 +59,18 @@ Application::OnRotEncClick(bool dir)
     if (page) {
         page->OnRotEncClick(dir);
     }
+}
+
+void
+Application::SetPage(Pages page)
+{
+    switch (page) {
+    case Pages::MAIN:
+        curPage.Engage<MainPage>();
+        break;
+    case Pages::MAIN_MENU:
+        curPage.Engage<MainMenu>(menuPos);
+        break;
+    }
+    curPageCode = nextPageCode;
 }

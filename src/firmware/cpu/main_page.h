@@ -11,6 +11,9 @@
 
 /** Main application screen. */
 class MainPage: Page {
+public:
+    MainPage();
+
     virtual void
     OnButtonPressed() override;
 

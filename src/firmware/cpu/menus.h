@@ -17,8 +17,8 @@ public:
         I_TEST2
     };
 
-    MainMenu():
-        Menu(strings.MainMenu)
+    MainMenu(u8 pos = 0):
+        Menu(strings.MainMenu, pos)
     {}
 };
 

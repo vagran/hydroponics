@@ -14,6 +14,11 @@
 /** Base class for displayed page. */
 class Page {
 public:
+    Page()
+    {
+        display.Clear();
+    }
+
     /** Called in periodically polling loop. */
     virtual void
     Poll()
@@ -34,6 +39,17 @@ public:
     virtual void
     OnRotEncClick(bool dir __UNUSED)
     {}
+
+    /** Request page closing.
+     *
+     * @return True if page can be closed (destructed), false if not yet (e.g.
+     *      asynchronous operation in progress).
+     */
+    virtual bool
+    RequestClose()
+    {
+        return true;
+    }
 };
 
 /* Pages. */
@@ -43,6 +59,11 @@ public:
 /** Encapsulates high-level application logic. */
 class Application {
 public:
+    enum Pages {
+        MAIN,
+        MAIN_MENU
+    };
+
     Application();
 
     void
@@ -61,8 +82,17 @@ public:
     void
     OnRotEncClick(bool dir);
 
-private:
-    Variant<MainPage, Menu> curPage;
+    /** Set next page to display.
+     *
+     * @param page Page to set.
+     * @param menuPos Menu position if menu page.
+     */
+    inline void
+    SetNextPage(Pages page, u8 menuPos = 0)
+    {
+        nextPageCode = page;
+        this->menuPos = menuPos;
+    }
 
     inline Page *
     CurPage()
@@ -72,6 +102,18 @@ private:
         }
         return nullptr;
     }
+
+private:
+    Variant<MainPage, MainMenu> curPage;
+
+    /** Pages enum. */
+    u8 curPageCode:4,
+       nextPageCode:4,
+
+       menuPos;
+
+    void
+    SetPage(Pages page);
 };
 
 extern Application app;

@@ -10,26 +10,35 @@
 
 using namespace adk;
 
-MainMenu menu;//XXX
-
 //XXX
 static u8 tmpMode;
 
-void
-MainPage::OnButtonPressed()
+MainPage::MainPage()
 {
-    //XXX
-    tmpMode = ~tmpMode;
-
     static bool inv = false;
-
     textWriter.Write(Display::Viewport {0, 127, 1, 2},
         strings.Test, inv);//"Warning! Low water", inv);
 
     bitmapWriter.Write(8, 6, &bitmaps.Thermometer, inv);
     bitmapWriter.Write(16, 6, &bitmaps.Sun, inv);
+}
 
-    inv = !inv;
+void
+MainPage::OnButtonPressed()
+{
+    app.SetNextPage(Application::Pages::MAIN_MENU);
+    //XXX
+//    tmpMode = ~tmpMode;
+//
+//    static bool inv = false;
+//
+//    textWriter.Write(Display::Viewport {0, 127, 1, 2},
+//        strings.Test, inv);//"Warning! Low water", inv);
+//
+//    bitmapWriter.Write(8, 6, &bitmaps.Thermometer, inv);
+//    bitmapWriter.Write(16, 6, &bitmaps.Sun, inv);
+//
+//    inv = !inv;
 }
 
 void
