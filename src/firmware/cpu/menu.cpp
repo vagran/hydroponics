@@ -44,6 +44,11 @@ Menu::Initialize()
         }
     }
 
+    //XXX
+    for (u8 i = 0; i < numItems; i++) {
+        AVR_BIT_SET8(PINB, 4);
+    }
+
     if (curItem >= numItems) {
         curItem = numItems - 1;
     }
@@ -120,6 +125,11 @@ void
 Menu::DrawHandler()
 {
     AtomicSection as;
+
+    if (closeRequested || drawPending) {
+        drawInProgress = false;
+        return;
+    }
 
     if (curDrawItem >= NUM_LINES - 1 ||
         curDrawItem + topItem >= numItems - 1) {
