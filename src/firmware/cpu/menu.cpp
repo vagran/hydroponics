@@ -242,21 +242,23 @@ Menu::OnItemSelected(u8 idx)
 }
 
 i8
-Menu::FindAction(const Action *actions, u8 numActions, VariantFabric fabric)
+Menu::FindAction(const Action *actions, VariantFabric fabric)
 {
     if (!actions) {
         return -1;
     }
     i8 idx = 0;
     const Action *p = actions;
-    while (numActions) {
+    while (true) {
         Action a;
         memcpy_P(&a, p, sizeof(a));
+        if (a.typeCode == 0xff) {
+            return -1;
+        }
         if (a.fabric == fabric) {
             return idx;
         }
         p++;
         idx++;
     }
-    return -1;
 }

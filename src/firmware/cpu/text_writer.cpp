@@ -27,7 +27,7 @@ TextWriter::Poll()
 
 void
 TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
-                  bool fillVp, DoneHandler handler, bool isPgm)
+                  bool clear, bool fillVp, DoneHandler handler, bool isPgm)
 {
     AtomicSection as;
     /* Find queue free slot. */
@@ -50,6 +50,7 @@ TextWriter::Write(Display::Viewport vp, const char *text, bool inversed,
     req.vp = vp;
     req.text = text;
     req.inversed = inversed;
+    req.clear = clear;
     req.fillVp = fillVp;
     req.handler = handler;
     req.isPgm = isPgm;
@@ -83,7 +84,7 @@ TextWriter::OutputHandler(u8 column, u8 page, u8 *data)
             break;
         }
         if (curCharCol < FONT_WIDTH) {
-            if (curChar >= 0x20) {
+            if (curChar >= 0x20 && !req.clear) {
                 _data = pgm_read_byte(&fontData[curChar - 0x20][curCharCol]);
             } else {
                 _data = 0;

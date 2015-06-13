@@ -9,6 +9,9 @@
 #ifndef MENU_H_
 #define MENU_H_
 
+/** Use as terminator in menu actions lists. */
+#define MENU_ACTIONS_END {0xff, nullptr}
+
 class Menu: public Page {
 public:
     struct Action {
@@ -60,12 +63,11 @@ public:
     /** Find action with the specified fabric in the provided actions array.
      *
      * @param actions Actions array.
-     * @param numActions Number of elements in the actions array.
      * @param fabric Fabric handler to find.
      * @return Index of the found action, -1 if not found.
      */
     static i8
-    FindAction(const Action *actions, u8 numActions, VariantFabric fabric);
+    FindAction(const Action *actions, VariantFabric fabric);
 
     /** Selected item when returning from submenu. */
     static u8 returnPos;

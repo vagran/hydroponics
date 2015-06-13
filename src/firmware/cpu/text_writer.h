@@ -33,14 +33,29 @@ public:
     Write(Display::Viewport vp, char *text, bool inversed = false,
           bool fillVp = false, DoneHandler handler = nullptr)
     {
-        Write(vp, text, inversed, fillVp, handler, false);
+        Write(vp, text, inversed, false, fillVp, handler, false);
     }
 
     inline void
     Write(Display::Viewport vp, const char *text, bool inversed = false,
           bool fillVp = false, DoneHandler handler = nullptr)
     {
-        Write(vp, text, inversed, fillVp, handler, true);
+        Write(vp, text, inversed, false, fillVp, handler, true);
+    }
+
+    /** Clear space occupied by the provided text. */
+    inline void
+    Clear(Display::Viewport vp, char *text, bool inversed = false,
+          bool fillVp = false, DoneHandler handler = nullptr)
+    {
+        Write(vp, text, inversed, true, fillVp, handler, false);
+    }
+
+    inline void
+    Clear(Display::Viewport vp, const char *text, bool inversed = false,
+          bool fillVp = false, DoneHandler handler = nullptr)
+    {
+        Write(vp, text, inversed, true, fillVp, handler, true);
     }
 
 private:
@@ -58,7 +73,8 @@ private:
         u8 isPgm:1,
            inversed:1,
            fillVp:1,
-           reserved:5;
+           clear:1,
+           reserved:4;
     } __PACKED;
 
     Request reqQueue[MAX_REQUESTS];
@@ -77,8 +93,8 @@ private:
 
 
     void
-    Write(Display::Viewport vp, const char *text, bool inversed, bool fillVp,
-          DoneHandler handler, bool isPgm);
+    Write(Display::Viewport vp, const char *text, bool inversed, bool clear,
+          bool fillVp, DoneHandler handler, bool isPgm);
 
     static bool
     _OutputHandler(u8 column, u8 page, u8 *data);

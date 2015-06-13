@@ -54,6 +54,7 @@ public:
 
 /* Pages. */
 #include "main_page.h"
+#include "pages.h"
 #include "menu.h"
 #include "linear_value_selector.h"
 
@@ -106,7 +107,8 @@ public:
 
 private:
     Variant<MainPage,
-            Menu> curPage;
+            Menu,
+            LinearValueSelector> curPage;
 
     u8 nextPageTypeCode: 5,
        reserved:3;
