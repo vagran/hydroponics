@@ -20,13 +20,21 @@ OnClosed(u16)
 }
 
 void
+OnChanged(u16 value)
+{
+    light.SetLevel(value);
+}
+
+void
 Fabric(void *p)
 {
     LinearValueSelector *sel =
-        new (p) LinearValueSelector(strings.LightControl, /*XXX*/100, 0, 255);
+        new (p) LinearValueSelector(strings.LightControl, light.GetLevel(),
+                                    0, 255);
     Menu::returnPos = Menu::FindAction(ManualControlMenu::actions,
                                        ManCtrl_Light::Fabric);
     sel->onClosed = OnClosed;
+    sel->onChanged = OnChanged;
 }
 
 } /* namespace ManCtrl_Light */

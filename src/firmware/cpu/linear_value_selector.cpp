@@ -166,7 +166,7 @@ LinearValueSelector::IssueDrawRequest()
         u8 len = strlen(buf);
         buf[len] = '%';
         buf[len + 1] = 0;
-        textWriter.Write(Display::Viewport{48, 80, 5, 5}, buf,
+        textWriter.Write(Display::Viewport{56, 88, 6, 6}, buf,
                          false, true, _DrawHandler);
         break;
     }

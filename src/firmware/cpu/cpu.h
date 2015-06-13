@@ -129,6 +129,7 @@ extern Clock clock;
 #include "text_writer.h"
 #include "bitmap.h"
 #include "bitmaps.h"
+#include "lighting.h"
 #include "application.h"
 
 #endif /* CPU_H_ */
