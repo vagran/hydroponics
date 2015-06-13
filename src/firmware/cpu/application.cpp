@@ -76,6 +76,15 @@ Application::SetPage(Pages page)
     case Pages::MAIN_MENU:
         curPage.Engage<MainMenu>(menuPos);
         break;
+    case Pages::MANUAL_CONTROL_MENU:
+        curPage.Engage<ManualControlMenu>(menuPos);
+        break;
+    case Pages::CALIBRATION_MENU:
+        curPage.Engage<CalibrationMenu>(menuPos);
+        break;
+    case Pages::SETUP_MENU:
+        curPage.Engage<SetupMenu>(menuPos);
+        break;
     }
     curPageCode = nextPageCode;
 }

@@ -63,7 +63,10 @@ public:
         /** Used as initial value. */
         NONE,
         MAIN,
-        MAIN_MENU
+        MAIN_MENU,
+        MANUAL_CONTROL_MENU,
+        CALIBRATION_MENU,
+        SETUP_MENU
     };
 
     Application();
@@ -106,7 +109,11 @@ public:
     }
 
 private:
-    Variant<MainPage, MainMenu> curPage;
+    Variant<MainPage,
+            MainMenu,
+            ManualControlMenu,
+            CalibrationMenu,
+            SetupMenu> curPage;
 
     /** Pages enum. */
     u8 curPageCode:4,

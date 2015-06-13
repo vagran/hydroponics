@@ -17,10 +17,14 @@ MainMenu::OnItemSelected(u8 idx)
     case I_RETURN:
         app.SetNextPage(Application::Pages::MAIN);
         break;
-
-    //XXX
-    case I_TEST1:
-    case I_TEST2:
+    case I_MANUAL_CONTROL:
+        app.SetNextPage(Application::Pages::MANUAL_CONTROL_MENU);
+        break;
+    case I_CALIBRATION:
+        app.SetNextPage(Application::Pages::CALIBRATION_MENU);
+        break;
+    case I_SETUP:
+        app.SetNextPage(Application::Pages::SETUP_MENU);
         break;
     }
 }
