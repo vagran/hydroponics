@@ -13,6 +13,12 @@ using namespace adk;
 //XXX
 static u8 tmpMode;
 
+void
+MainPage::Fabric(void *p)
+{
+    new (p) MainPage();
+}
+
 MainPage::MainPage()
 {
     static bool inv = false;
@@ -26,7 +32,8 @@ MainPage::MainPage()
 void
 MainPage::OnButtonPressed()
 {
-    app.SetNextPage(Application::Pages::MAIN_MENU);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    MainMenu::Fabric);
     //XXX
 //    tmpMode = ~tmpMode;
 //

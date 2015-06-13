@@ -10,8 +10,11 @@
 #define MAIN_PAGE_H_
 
 /** Main application screen. */
-class MainPage: Page {
+class MainPage: public Page {
 public:
+    static void
+    Fabric(void *p);
+
     MainPage();
 
     virtual void

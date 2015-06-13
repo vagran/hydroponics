@@ -10,6 +10,8 @@
 
 using namespace adk;
 
+u8 Menu::returnPos;
+
 void
 Menu::Initialize()
 {
@@ -220,4 +222,41 @@ Menu::RequestClose()
     AtomicSection as;
     closeRequested = true;
     return !drawInProgress;
+}
+
+void
+Menu::OnItemSelected(u8 idx)
+{
+    if (!actions) {
+        return;
+    }
+    Action a;
+    memcpy_P(&a, actions + idx, sizeof(a));
+    if (!a.typeCode) {
+        return;
+    }
+    if (returnAction != -1 && idx != returnAction) {
+        returnPos = 0;
+    }
+    app.SetNextPage(a.typeCode, a.fabric);
+}
+
+i8
+Menu::FindAction(const Action *actions, u8 numActions, VariantFabric fabric)
+{
+    if (!actions) {
+        return -1;
+    }
+    i8 idx = 0;
+    const Action *p = actions;
+    while (numActions) {
+        Action a;
+        memcpy_P(&a, p, sizeof(a));
+        if (a.fabric == fabric) {
+            return idx;
+        }
+        p++;
+        idx++;
+    }
+    return -1;
 }

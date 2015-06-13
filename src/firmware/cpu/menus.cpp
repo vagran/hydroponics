@@ -10,21 +10,68 @@
 
 using namespace adk;
 
+
+const Menu::Action MainMenu::actions[] = {
+    {Application::GetPageTypeCode<MainPage>(), MainPage::Fabric},
+    {Application::GetPageTypeCode<Menu>(), ManualControlMenu::Fabric},
+    {Application::GetPageTypeCode<Menu>(), CalibrationMenu::Fabric},
+    {Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric},
+};
+
 void
-MainMenu::OnItemSelected(u8 idx)
+MainMenu::Fabric(void *p)
 {
-    switch (static_cast<Idx>(idx)) {
-    case I_RETURN:
-        app.SetNextPage(Application::Pages::MAIN);
-        break;
-    case I_MANUAL_CONTROL:
-        app.SetNextPage(Application::Pages::MANUAL_CONTROL_MENU);
-        break;
-    case I_CALIBRATION:
-        app.SetNextPage(Application::Pages::CALIBRATION_MENU);
-        break;
-    case I_SETUP:
-        app.SetNextPage(Application::Pages::SETUP_MENU);
-        break;
-    }
+    new (p) Menu(strings.MainMenu, Menu::returnPos, actions);
+    Menu::returnPos = 0;
+}
+
+
+const Menu::Action ManualControlMenu::actions[] = {
+    {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
+    {0, nullptr},
+    {0, nullptr},
+    {0, nullptr}
+};
+
+void
+ManualControlMenu::Fabric(void *p)
+{
+    new (p) Menu(strings.ManualControlMenu, Menu::returnPos, actions, 0);
+    Menu::returnPos = Menu::FindAction(MainMenu::actions,
+                                       SIZEOF_ARRAY(MainMenu::actions),
+                                       ManualControlMenu::Fabric);
+}
+
+
+const Menu::Action CalibrationMenu::actions[] = {
+    {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
+    {0, nullptr},
+    {0, nullptr},
+    {0, nullptr}
+};
+
+void
+CalibrationMenu::Fabric(void *p)
+{
+    new (p) Menu(strings.CalibrationMenu, Menu::returnPos, actions, 0);
+    Menu::returnPos = Menu::FindAction(MainMenu::actions,
+                                       SIZEOF_ARRAY(MainMenu::actions),
+                                       CalibrationMenu::Fabric);
+}
+
+
+const Menu::Action SetupMenu::actions[] = {
+    {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
+    {0, nullptr},
+    {0, nullptr},
+    {0, nullptr}
+};
+
+void
+SetupMenu::Fabric(void *p)
+{
+    new (p) Menu(strings.SetupMenu, Menu::returnPos, actions, 0);
+    Menu::returnPos = Menu::FindAction(MainMenu::actions,
+                                       SIZEOF_ARRAY(MainMenu::actions),
+                                       SetupMenu::Fabric);
 }

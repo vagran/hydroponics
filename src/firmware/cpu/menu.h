@@ -9,26 +9,41 @@
 #ifndef MENU_H_
 #define MENU_H_
 
-class Menu: Page {
+class Menu: public Page {
 public:
-    /** Additional null terminator after last item. */
-    Menu(char *items, u8 pos = 0):
-        items(items), isPgm(false), curItem(pos)
+    struct Action {
+        /** Zero to ignore action (handle in overridden OnItemSelected() method. */
+        u8 typeCode;
+        VariantFabric fabric;
+    } __PACKED;
+
+    /** @param items Item strings. Additional null terminator after last item.
+     *  @param pos Initially selected item index.
+     *  @param actions Default page navigation actions. Size should be equal to
+     *      number of items in "items" argument.
+     *  @param returnAction Return action index if special handling needed, -1
+     *      if not needed.
+     */
+    Menu(char *items, u8 pos = 0, const Action *actions = nullptr,
+         i8 returnAction = -1):
+        items(items), actions(actions), isPgm(false), curItem(pos),
+        returnAction(returnAction)
     {
         Initialize();
     }
 
     /** Additional null terminator after last item. */
-    Menu(const char *items, u8 pos = 0):
-        items(items), isPgm(true), curItem(pos)
+    Menu(const char *items, u8 pos = 0, const Action *actions = nullptr,
+         i8 returnAction = -1):
+        items(items), actions(actions), isPgm(true), curItem(pos),
+        returnAction(returnAction)
     {
         Initialize();
     }
 
     /** Override to process selection event. */
     virtual void
-    OnItemSelected(u8 idx __UNUSED)
-    {}
+    OnItemSelected(u8 idx);
 
     virtual void
     OnButtonPressed() override;
@@ -41,6 +56,19 @@ public:
 
     virtual bool
     RequestClose() override;
+
+    /** Find action with the specified fabric in the provided actions array.
+     *
+     * @param actions Actions array.
+     * @param numActions Number of elements in the actions array.
+     * @param fabric Fabric handler to find.
+     * @return Index of the found action, -1 if not found.
+     */
+    static i8
+    FindAction(const Action *actions, u8 numActions, VariantFabric fabric);
+
+    /** Selected item when returning from submenu. */
+    static u8 returnPos;
 
 private:
     enum {
@@ -56,6 +84,7 @@ private:
     };
 
     const char *items;
+    const Action *actions;
 
     u8 isPgm:1,
        drawInProgress:1,
@@ -68,6 +97,7 @@ private:
     const char *curDrawItemText;
 
     u8 curItem, numItems, topItem;
+    i8 returnAction;
 
     void
     Initialize();
@@ -83,7 +113,7 @@ private:
 
     const char *
     SkipItems(const char *p, u8 num);
-};
+} __PACKED;
 
 #include "menus.h"
 

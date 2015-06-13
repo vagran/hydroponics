@@ -20,6 +20,11 @@ operator new(size_t, void *p)
     return p;
 }
 
+/** Callback for constructing object in variant container at the specified
+ * location.
+ */
+typedef void (*VariantFabric)(void *p);
+
 namespace internal {
 
 /** Base class for Variant. */
@@ -61,15 +66,6 @@ protected:
     {
         //XXX assert curType == typeCode
         return reinterpret_cast<Type *>(Base::buf);
-    }
-
-    template <typename... Args>
-    void
-    EngageImpl(Args... args)
-    {
-        // assert !curType
-        new(GetPtr()) Type(args...);
-        Base::curType = typeCode;
     }
 
     void
@@ -162,7 +158,25 @@ public:
     {
         Disengage();
         //XXX forward
-        SelBase<Type>::EngageImpl(args...);
+        new(GetPtr()) Type(args...);
+        BaseType::curType = SelBase<Type>::typeCode;
+    }
+
+    template <typename Type>
+    void
+    Engage(VariantFabric fabric)
+    {
+        Disengage();
+        fabric(GetPtr());
+        BaseType::curType = SelBase<Type>::typeCode;
+    }
+
+    void
+    Engage(u8 typeCode, VariantFabric fabric)
+    {
+        Disengage();
+        fabric(GetPtr());
+        BaseType::curType = typeCode;
     }
 
     /** Destruct stored value. */

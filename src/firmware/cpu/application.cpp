@@ -16,8 +16,15 @@ Application app;
 
 Application::Application()
 {
-    curPageCode = Pages::NONE;
-    nextPageCode = Pages::MAIN;
+    SetNextPage(GetPageTypeCode<MainPage>(), MainPage::Fabric);
+}
+
+void
+Application::SetNextPage(u8 pageTypeCode, VariantFabric page)
+{
+    AtomicSection as;
+    nextPageTypeCode = pageTypeCode;
+    nextPage = page;
 }
 
 void
@@ -25,9 +32,9 @@ Application::Poll()
 {
     AtomicSection as;
     Page *page = CurPage();
-    if (nextPageCode != curPageCode) {
+    if (nextPage) {
         if (!page || page->RequestClose()) {
-            SetPage(static_cast<Pages>(nextPageCode));
+            SetPage(nextPage);
             page = CurPage();
         }
     }
@@ -64,27 +71,8 @@ Application::OnRotEncClick(bool dir)
 }
 
 void
-Application::SetPage(Pages page)
+Application::SetPage(VariantFabric page)
 {
-    switch (page) {
-    case Pages::NONE:
-        curPage.Disengage();
-        break;
-    case Pages::MAIN:
-        curPage.Engage<MainPage>();
-        break;
-    case Pages::MAIN_MENU:
-        curPage.Engage<MainMenu>(menuPos);
-        break;
-    case Pages::MANUAL_CONTROL_MENU:
-        curPage.Engage<ManualControlMenu>(menuPos);
-        break;
-    case Pages::CALIBRATION_MENU:
-        curPage.Engage<CalibrationMenu>(menuPos);
-        break;
-    case Pages::SETUP_MENU:
-        curPage.Engage<SetupMenu>(menuPos);
-        break;
-    }
-    curPageCode = nextPageCode;
+    curPage.Engage(nextPageTypeCode, page);
+    nextPage = nullptr;
 }

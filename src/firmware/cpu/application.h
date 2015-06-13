@@ -55,20 +55,11 @@ public:
 /* Pages. */
 #include "main_page.h"
 #include "menu.h"
+#include "linear_value_selector.h"
 
 /** Encapsulates high-level application logic. */
 class Application {
 public:
-    enum Pages {
-        /** Used as initial value. */
-        NONE,
-        MAIN,
-        MAIN_MENU,
-        MANUAL_CONTROL_MENU,
-        CALIBRATION_MENU,
-        SETUP_MENU
-    };
-
     Application();
 
     void
@@ -89,15 +80,12 @@ public:
 
     /** Set next page to display.
      *
+     * @param pageTypeCode Code for the page type, obtained by GetPageTypeCode().
      * @param page Page to set.
      * @param menuPos Menu position if menu page.
      */
-    inline void
-    SetNextPage(Pages page, u8 menuPos = 0)
-    {
-        nextPageCode = page;
-        this->menuPos = menuPos;
-    }
+    void
+    SetNextPage(u8 pageTypeCode, VariantFabric page);
 
     inline Page *
     CurPage()
@@ -108,21 +96,25 @@ public:
         return nullptr;
     }
 
+    /** Get type code for the specified page class. */
+    template <class TPage>
+    static constexpr u8
+    GetPageTypeCode()
+    {
+        return decltype(curPage)::GetTypeCode<TPage>();
+    }
+
 private:
     Variant<MainPage,
-            MainMenu,
-            ManualControlMenu,
-            CalibrationMenu,
-            SetupMenu> curPage;
+            Menu> curPage;
 
-    /** Pages enum. */
-    u8 curPageCode:4,
-       nextPageCode:4,
-
-       menuPos;
+    u8 nextPageTypeCode: 5,
+       reserved:3;
+    /** Next page fabric if next page pending. */
+    VariantFabric nextPage = nullptr;
 
     void
-    SetPage(Pages page);
+    SetPage(VariantFabric page);
 };
 
 extern Application app;
