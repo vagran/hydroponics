@@ -15,6 +15,10 @@ namespace ManCtrl_Light {
     Fabric(void *p);
 };
 
+namespace ManCtrl_Pump {
 
+    void
+    Fabric(void *p);
+};
 
 #endif /* PAGES_H_ */

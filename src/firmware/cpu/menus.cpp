@@ -30,8 +30,7 @@ MainMenu::Fabric(void *p)
 const Menu::Action ManualControlMenu::actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
     {Application::GetPageTypeCode<LinearValueSelector>(), ManCtrl_Light::Fabric},
-    {0, nullptr},
-    {0, nullptr},
+    {Application::GetPageTypeCode<LinearValueSelector>(), ManCtrl_Pump::Fabric},
     MENU_ACTIONS_END
 };
 

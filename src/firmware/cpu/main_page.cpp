@@ -10,9 +10,6 @@
 
 using namespace adk;
 
-//XXX
-static u8 tmpMode;
-
 void
 MainPage::Fabric(void *p)
 {
@@ -21,6 +18,7 @@ MainPage::Fabric(void *p)
 
 MainPage::MainPage()
 {
+    //XXX
     static bool inv = false;
     textWriter.Write(Display::Viewport {0, 127, 1, 2},
         strings.Test, inv);//"Warning! Low water", inv);
@@ -34,39 +32,10 @@ MainPage::OnButtonPressed()
 {
     app.SetNextPage(Application::GetPageTypeCode<Menu>(),
                     MainMenu::Fabric);
-    //XXX
-//    tmpMode = ~tmpMode;
-//
-//    static bool inv = false;
-//
-//    textWriter.Write(Display::Viewport {0, 127, 1, 2},
-//        strings.Test, inv);//"Warning! Low water", inv);
-//
-//    bitmapWriter.Write(8, 6, &bitmaps.Thermometer, inv);
-//    bitmapWriter.Write(16, 6, &bitmaps.Sun, inv);
-//
-//    inv = !inv;
 }
 
 void
-MainPage::OnRotEncClick(bool dir)
+MainPage::OnRotEncClick(bool dir __UNUSED/*XXX*/)
 {
     //XXX
-    if (tmpMode) {
-        u8 pwm = Pwm3Get();
-        if (dir && pwm < 255) {
-            pwm++;
-        } else if (!dir && pwm > 0) {
-            pwm--;
-        }
-        Pwm3Set(pwm);
-    } else {
-        u8 pwm = Pwm2Get();
-        if (dir && pwm < 255) {
-            pwm++;
-        } else if (!dir && pwm > 0) {
-            pwm--;
-        }
-        Pwm2Set(pwm);
-    }
 }

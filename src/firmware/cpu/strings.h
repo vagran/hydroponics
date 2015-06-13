@@ -20,8 +20,9 @@ public:
     DEF_STR(Test, "*+Iacebdpqghoswyz1234567890")
     DEF_STR(Test2, "Test string")
 
-    DEF_STR(LightControl, "Light control")
     DEF_STR(Fine, " Fine ")
+    DEF_STR(LightControl, "Light control")
+    DEF_STR(PumpControl, "Pump control")
 
     /* Menus */
     DEF_STR(MainMenu,
