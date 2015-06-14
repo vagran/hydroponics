@@ -55,7 +55,7 @@ namespace CalibrationMenu {
 const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
     {0, nullptr},
-    {0, nullptr},
+    {Application::GetPageTypeCode<Menu>(), LvlGaugeCalibrationMenu::Fabric},
     {0, nullptr},
     MENU_ACTIONS_END
 };
@@ -109,3 +109,24 @@ Fabric(void *p)
 }
 
 } /* namespace SetupMenu */
+
+
+namespace LvlGaugeCalibrationMenu {
+
+const Menu::Action actions[] = {
+    {Application::GetPageTypeCode<Menu>(), CalibrationMenu::Fabric},
+    {Application::GetPageTypeCode<ClbLvlGauge_MinValue::TPage>(),
+     ClbLvlGauge_MinValue::Fabric},
+    {Application::GetPageTypeCode<ClbLvlGauge_MaxValue::TPage>(),
+     ClbLvlGauge_MaxValue::Fabric},
+    MENU_ACTIONS_END
+};
+
+void
+Fabric(void *p)
+{
+    new (p) Menu(strings.LvlGaugeCalibrationMenu, Menu::returnPos, actions, 0);
+    Menu::returnPos = Menu::FindAction(CalibrationMenu::actions, Fabric);
+}
+
+} /* namespace LvlGaugeCalibrationMenu */

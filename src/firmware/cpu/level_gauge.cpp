@@ -85,10 +85,9 @@ LevelGauge::Timer1Capt()
         /* No active measurement. */
         return;
     }
-    AVR_BIT_SET8(PINB, 4);//XXX
     if (!echoStarted) {
         /* Capture falling edge. */
-        AVR_BIT_CLR8(TCCR1B, ICES1);//XXX
+        AVR_BIT_CLR8(TCCR1B, ICES1);
         /* Clear pending capture interrupt, required if edge changed. */
         TIFR1 = _BV(ICF1);
         /* End trigger pulse. */
@@ -172,4 +171,21 @@ LevelGauge::OnResult(u16 result)
     } else {
         accResult = accResult - (accResult >> ROLL_AVG_BITS) + result;
     }
+}
+
+u8
+LevelGauge::GetValue()
+{
+    u16 value = GetRawValue();
+    if (value < minValue) {
+        value = minValue;
+    } else if (value > maxValue) {
+        value = maxValue;
+    }
+    value -= minValue;
+    if (minValue == maxValue) {
+        return 0;
+    }
+    u8 result = static_cast<u32>(value) * 0xff / (maxValue - minValue);
+    return 0xff - result;
 }

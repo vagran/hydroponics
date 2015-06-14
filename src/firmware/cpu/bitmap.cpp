@@ -67,7 +67,9 @@ BitmapWriter::StartRequest()
     if (!req.bmp) {
         return false;
     }
+
     reqInProgress = true;
+
     if (req.isPgm) {
         curBmpWidth = pgm_read_byte(&req.bmp->numColumns);
         curBmpHeight = pgm_read_byte(&req.bmp->numPages);
@@ -80,10 +82,24 @@ BitmapWriter::StartRequest()
         curBmpHeight = req.bmp->numPages;
         curBmpData = req.bmp->data;
     }
+
+    if (curBmpWidth > DISPLAY_COLUMNS - req.col) {
+        curBmpCroppedWidth = DISPLAY_COLUMNS - req.col;
+    } else {
+        curBmpCroppedWidth = curBmpWidth;
+    }
+
+    if (curBmpHeight > DISPLAY_PAGES - req.page) {
+        curBmpCroppedHeight = DISPLAY_PAGES - req.page;
+    } else {
+        curBmpCroppedHeight = curBmpHeight;
+    }
+
     display.Output(Display::Viewport {
-        req.col, static_cast<u8>(req.col + curBmpWidth - 1),
-        req.page, static_cast<u8>(req.page + curBmpHeight - 1)},
+        req.col, static_cast<u8>(req.col + curBmpCroppedWidth - 1),
+        req.page, static_cast<u8>(req.page + curBmpCroppedHeight - 1)},
         _OutputHandler);
+
     return true;
 }
 
@@ -123,13 +139,21 @@ BitmapWriter::OutputHandler(u8 column, u8 page, u8 *data)
         }
         curBmpData++;
     }
+
     if (req.inversed) {
         *data = ~_data;
     } else {
         *data = _data;
     }
-    if (column == req.col + curBmpWidth - 1 &&
-        page == req.page + curBmpHeight - 1) {
+
+    if (curBmpWidth != curBmpCroppedWidth &&
+        column == req.col + curBmpCroppedWidth -1) {
+
+        curBmpData += curBmpWidth - curBmpCroppedWidth;
+    }
+
+    if (column == req.col + curBmpCroppedWidth - 1 &&
+        page == req.page + curBmpCroppedHeight - 1) {
         /* Fully drawn. */
         NextRequest();
     }

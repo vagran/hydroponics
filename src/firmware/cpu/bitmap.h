@@ -95,7 +95,13 @@ private:
        reserved:1,
 
        curBmpWidth:7,
-       reserved2:1;
+       reserved2:1,
+
+       curBmpCroppedWidth:7,
+       reserved3:1,
+
+       curBmpCroppedHeight:3,
+       reserved4:5;
     const u8 *curBmpData;
 
     void

@@ -44,4 +44,12 @@ namespace StatusMenu {
     Fabric(void *p);
 }
 
+namespace LvlGaugeCalibrationMenu {
+    extern const Menu::Action actions[] PROGMEM;
+
+    void
+    Fabric(void *p);
+}
+
+
 #endif /* MENUS_H_ */

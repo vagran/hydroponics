@@ -26,6 +26,40 @@ public:
         return accResult >> ROLL_AVG_BITS;
     }
 
+    /** Get normalized value. 0 is minimal level, 255 - maximal. */
+    u8
+    GetValue();
+
+    u16
+    GetMinValue()
+    {
+        return minValue;
+    }
+
+    u16
+    GetMaxValue()
+    {
+        return maxValue;
+    }
+
+    void
+    SetMinValue(u16 v)
+    {
+        if (v > maxValue) {
+            v = maxValue;
+        }
+        minValue = v;
+    }
+
+    void
+    SetMaxValue(u16 v)
+    {
+        if (v < minValue) {
+            v = minValue;
+        }
+        maxValue = v;
+    }
+
     /** Enable periodic measurements. */
     void
     Enable();
@@ -54,6 +88,7 @@ private:
         failure:1,
         reserved:9;
     u16 echoStartTime;
+    u16 minValue = 0, maxValue = 0xffff;
 
     static u16
     _PeriodicTask();

@@ -35,8 +35,21 @@ public:
     LinearValueSelector(const char *title, u16 initialValue, u16 minValue,
                         u16 maxValue, bool readOnly = false);
 
+    u16
+    GetValue()
+    {
+        return value;
+    }
+
     void
     SetValue(u16 value);
+
+    /** Set hint value to display under the gauge. */
+    void
+    SetHint(u16 hintValue);
+
+    void
+    UnsetHint();
 
     /** Format value to string to show on the page. */
     virtual void
@@ -69,6 +82,8 @@ private:
         FULL_DRAW,
         TITLE = FULL_DRAW,
         FINE,
+        HINT_CLEAR,
+        HINT,
 
         PARTIAL_DRAW,
         GAUGE = PARTIAL_DRAW,
@@ -78,7 +93,7 @@ private:
         LAST = PERCENTS
     };
     const char *title;
-    u16 value, minValue, maxValue;
+    u16 value, minValue, maxValue, hintValue, oldHintValue;
     char buf[PRINTER_BUF_SIZE];
 
     u8 drawInProgress:1,
@@ -89,7 +104,11 @@ private:
        fineInc:1,
 
        gaugeLen:7,
-       readOnly:1;
+       readOnly:1,
+
+       hintSet:1,
+       hintUpdated:1,
+       reserved:7;
 
     void
     Draw(bool full = false);
@@ -109,6 +128,12 @@ private:
 
     static bool
     _GaugeDrawHandler(u8 column, u8 page, u8 *data);
+
+    inline u8
+    GetGaugeLen(u16 value)
+    {
+        return static_cast<u32>(value - minValue) * 126 / (maxValue - minValue);
+    }
 
 } __PACKED;
 

@@ -24,6 +24,8 @@ public:
     DEF_STR(LightControl, "Light control")
     DEF_STR(PumpControl, "Pump control")
     DEF_STR(LvlGaugeStatus, "Level gauge status")
+    DEF_STR(LvlGaugeClbMin, "Level gauge min.")
+    DEF_STR(LvlGaugeClbMax, "Level gauge max.")
 
     /* Menus */
     DEF_STR(MainMenu,
@@ -55,6 +57,11 @@ public:
             "Lighting\0"
             "Level gauge\0"
             "Temperature\0")
+
+    DEF_STR(LvlGaugeCalibrationMenu,
+            "Return\0"
+            "Min. value\0"
+            "Max. value\0")
 
 } __PACKED;
 

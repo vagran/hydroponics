@@ -19,6 +19,8 @@ LinearValueSelector::LinearValueSelector(const char *title,
     drawPending = false;
     closeRequested = false;
     fineInc = false;
+    hintSet = false;
+    hintUpdated = false;
     Draw(true);
 }
 
@@ -31,6 +33,32 @@ LinearValueSelector::SetValue(u16 value)
     }
     this->value = value;
     Draw();
+}
+
+void
+LinearValueSelector::SetHint(u16 hintValue)
+{
+    AtomicSection as;
+    if (hintSet && this->hintValue == hintValue) {
+        return;
+    }
+    hintSet = true;
+    hintUpdated = false;
+    oldHintValue = this->hintValue;
+    this->hintValue = hintValue;
+    Draw(true);
+}
+
+void
+LinearValueSelector::UnsetHint()
+{
+    AtomicSection as;
+    if (!hintSet) {
+        return;
+    }
+    hintSet = false;
+    hintUpdated = false;
+    Draw(true);
 }
 
 void
@@ -148,6 +176,7 @@ LinearValueSelector::Draw(bool full)
     }
     drawInProgress = true;
     drawState = full ? DrawState::FULL_DRAW : DrawState::PARTIAL_DRAW;
+    gaugeLen = GetGaugeLen(value);
     IssueDrawRequest();
 }
 
@@ -168,9 +197,32 @@ LinearValueSelector::IssueDrawRequest()
                              false, false, _DrawHandler);
         }
         break;
+    case DrawState::HINT_CLEAR:
+        if (!hintUpdated && hintSet) {
+            bitmapWriter.Clear(GetGaugeLen(oldHintValue), 5,
+                               &bitmaps.LinearValueSelectorHint,
+                               false, _DrawHandler);
+            oldHintValue = hintValue;
+            break;
+        }
+        drawState = DrawState::HINT;
+        /* FALL THROUGH */
+    case DrawState::HINT:
+        if (!hintUpdated) {
+            u8 col = GetGaugeLen(hintValue);
+            if (hintSet) {
+                bitmapWriter.Write(col, 5, &bitmaps.LinearValueSelectorHint,
+                                   false, _DrawHandler);
+            } else {
+                bitmapWriter.Clear(col, 5, &bitmaps.LinearValueSelectorHint,
+                                   false, _DrawHandler);
+            }
+            hintUpdated = true;
+            break;
+        }
+        drawState = DrawState::GAUGE;
+        /* FALL THROUGH */
     case DrawState::GAUGE:
-        gaugeLen = static_cast<u32>(value - minValue) * 126 /
-                   (maxValue - minValue);
         display.Output(Display::Viewport{0, 127, 4, 4}, _GaugeDrawHandler);
         break;
     case DrawState::VALUE:

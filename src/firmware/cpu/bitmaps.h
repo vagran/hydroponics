@@ -75,6 +75,13 @@ public:
         0b00010000
     )
 
+    /** Menu down icon. */
+    DEF_BITMAP(LinearValueSelectorHint, 1,
+        0b01110000,
+        0b01111111,
+        0b01110000
+    )
+
 } __PACKED;
 
 extern const Bitmaps bitmaps PROGMEM;

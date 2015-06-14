@@ -76,17 +76,69 @@ OnClosed(u16)
 void
 Poll()
 {
-    static_cast<TPage *>(app.CurPage())->SetValue(lvlGauge.GetRawValue());
+    static_cast<TPage *>(app.CurPage())->SetValue(lvlGauge.GetValue());
 }
 
 void
 Fabric(void *p)
 {
-    TPage *sel = new (p) TPage(strings.LvlGaugeStatus, lvlGauge.GetRawValue(),
-                               0, 0xffff, true);
+    TPage *sel = new (p) TPage(strings.LvlGaugeStatus, lvlGauge.GetValue(),
+                               0, 0xff, true);
     Menu::returnPos = Menu::FindAction(StatusMenu::actions, Fabric);
     sel->onClosed = OnClosed;
     sel->poll = Poll;
 }
 
 } /* namespace Status_LvlGauge */
+
+
+namespace ClbLvlGauge_MinValue {
+
+void
+Poll()
+{
+    static_cast<TPage *>(app.CurPage())->SetHint(lvlGauge.GetRawValue());
+}
+
+void
+OnClosed(u16)
+{
+    lvlGauge.SetMinValue(static_cast<TPage *>(app.CurPage())->GetValue());
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    LvlGaugeCalibrationMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.LvlGaugeClbMin, lvlGauge.GetMinValue(),
+                               0, 0xffff);
+    Menu::returnPos = Menu::FindAction(LvlGaugeCalibrationMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+    sel->poll = Poll;
+}
+
+} /* namespace ClbLvlGauge_MinValue */
+
+
+namespace ClbLvlGauge_MaxValue {
+
+void
+OnClosed(u16)
+{
+    lvlGauge.SetMaxValue(static_cast<TPage *>(app.CurPage())->GetValue());
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    LvlGaugeCalibrationMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.LvlGaugeClbMax, lvlGauge.GetMaxValue(),
+                               0, 0xffff);
+    Menu::returnPos = Menu::FindAction(LvlGaugeCalibrationMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+    sel->poll = ClbLvlGauge_MinValue::Poll;
+}
+
+} /* namespace ClbLvlGauge_MaxValue */

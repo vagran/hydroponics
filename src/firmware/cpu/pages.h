@@ -30,4 +30,18 @@ namespace Status_LvlGauge {
     Fabric(void *p);
 }
 
+namespace ClbLvlGauge_MinValue {
+    using TPage = LinearValueSelector;
+
+    void
+    Fabric(void *p);
+}
+
+namespace ClbLvlGauge_MaxValue {
+    using TPage = LinearValueSelector;
+
+    void
+    Fabric(void *p);
+}
+
 #endif /* PAGES_H_ */
