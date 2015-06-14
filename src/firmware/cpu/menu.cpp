@@ -209,6 +209,7 @@ Menu::OnRotEncClick(bool dir)
 void
 Menu::Poll()
 {
+    Page::Poll();
     AtomicSection as;
     if (drawPending && !drawInProgress) {
         drawPending = false;

@@ -33,7 +33,10 @@ public:
     Handler onClosed = nullptr;
 
     LinearValueSelector(const char *title, u16 initialValue, u16 minValue,
-                        u16 maxValue);
+                        u16 maxValue, bool readOnly = false);
+
+    void
+    SetValue(u16 value);
 
     /** Format value to string to show on the page. */
     virtual void
@@ -86,7 +89,7 @@ private:
        fineInc:1,
 
        gaugeLen:7,
-       reserved2:1;
+       readOnly:1;
 
     void
     Draw(bool full = false);

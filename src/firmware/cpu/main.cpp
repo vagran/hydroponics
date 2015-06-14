@@ -12,18 +12,6 @@ const Strings strings PROGMEM;
 static inline void
 OnAdcResult(u8 type, u16 value);
 
-/** Global bit-field variables for saving RAM space. Should be accessed with
- * interrupts disabled.
- */
-static struct {
-    /** Measurement in progress. */
-    u8 lvlGaugeActive:1,
-
-    /* Failure flags. */
-    /** Level gauge failure. */
-       failLvlGauge:1;
-} g;
-
 /* ****************************************************************************/
 /* System clock and scheduler. */
 
@@ -359,99 +347,6 @@ ISR(PCINT1_vect)
 }
 
 /* ****************************************************************************/
-/* Level gauge. */
-
-static u16 g_lvlGaugeResult;
-
-/** Invoked when measurement complete.
- * @param value xxx
- */
-static void
-OnLvlGaugeResult(u16 value);
-
-ISR(TIMER1_OVF_vect)
-{
-    if (!g.lvlGaugeActive) {
-        /* No active measurement. */
-        return;
-    }
-    g.lvlGaugeActive = FALSE;
-    /* Indicate out-of-range. */
-    OnLvlGaugeResult(0xffff);
-}
-
-ISR(TIMER1_CAPT_vect)
-{
-    if (!g.lvlGaugeActive) {
-        /* No active measurement. */
-        return;
-    }
-    g.lvlGaugeActive = FALSE;
-    g_lvlGaugeResult = ICR1;
-    scheduler.SchedulePoll();
-}
-
-static inline void
-LvlGaugeInit()
-{
-    /* Running at system clock frequency, normal mode. Input capture for falling
-     * edge.
-     */
-    TIMSK1 = _BV(ICIE1) | _BV(TOIE1);
-    AVR_BIT_SET8(AVR_REG_DDR(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-
-    /* Workaround for strange behaviour when echo output is initially high
-     * forever. Make one trigger pulse.
-     */
-    AVR_BIT_SET8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-    _delay_us(10);
-    AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-}
-
-static inline void
-LvlGaugePoll()
-{
-    cli();
-    u16 value = g_lvlGaugeResult;
-    g_lvlGaugeResult = 0;
-    sei();
-    if (value == 0) {
-        return;
-    }
-    OnLvlGaugeResult(value);
-}
-
-/** Start level measurement. */
-static void
-LvlGaugeStart()
-{
-    AtomicSection as;
-
-    if (g.lvlGaugeActive) {
-        /* Measurement in progress. Drop the new request. */
-        return;
-    }
-    g.lvlGaugeActive = TRUE;
-
-    if (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN)) {
-        /* Previous echo still active. Probably sensor failure. */
-        g.failLvlGauge = TRUE;
-        return;
-    }
-    /* Set trigger line and poll for echo start. */
-    AVR_BIT_SET8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-    while (!AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
-
-    /* Echo pulse started. Start counting. */
-    TCNT1 = 0;
-    /* Reset pending counter interrupts if any. */
-    TIFR1 = _BV(ICF1) | _BV(TOV1);
-
-    /* Clear trigger line. */
-    AVR_BIT_CLR8(AVR_REG_PORT(LVL_GAUGE_TRIG_PORT), LVL_GAUGE_TRIG_PIN);
-}
-
-/* ****************************************************************************/
 /* PWM signals generator. */
 
 static u8 pwm3Value;
@@ -581,25 +476,10 @@ OnAdcResult(u8 type __UNUSED, u16 value __UNUSED)
 //    }
 }
 
-static void
-OnLvlGaugeResult(u16 value __UNUSED)
-{
-    //LvlGaugeStart();//XXX
-}
-
-u16
-Test()
-{
-    PINB = 0x10;
-    LvlGaugeStart();//XXX
-    return TASK_DELAY_MS(500);
-}
-
 void
 adk::PollFunc()
 {
     rotEnc.Poll();
-    LvlGaugePoll();
     i2cBus.Poll();
     display.Poll();
     textWriter.Poll();
@@ -610,11 +490,11 @@ adk::PollFunc()
 int
 main(void)
 {
-    LvlGaugeInit();
     BtnInit();
     PwmInit();
     display.Initialize();
     display.Clear();
+    lvlGauge.Enable();
 
     //XXX
     DDRB |= 0x1e;

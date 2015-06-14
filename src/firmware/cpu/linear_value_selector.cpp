@@ -11,14 +11,26 @@
 using namespace adk;
 
 LinearValueSelector::LinearValueSelector(const char *title,
-    u16 initialValue, u16 minValue, u16 maxValue):
-    title(title), value(initialValue), minValue(minValue), maxValue(maxValue)
+    u16 initialValue, u16 minValue, u16 maxValue, bool readOnly):
+    title(title), value(initialValue), minValue(minValue), maxValue(maxValue),
+    readOnly(readOnly)
 {
     drawInProgress = false;
     drawPending = false;
     closeRequested = false;
     fineInc = false;
     Draw(true);
+}
+
+void
+LinearValueSelector::SetValue(u16 value)
+{
+    AtomicSection as;
+    if (this->value == value) {
+        return;
+    }
+    this->value = value;
+    Draw();
 }
 
 void
@@ -57,6 +69,9 @@ void
 LinearValueSelector::OnButtonLongPressed()
 {
     AtomicSection as;
+    if (readOnly) {
+        return;
+    }
     fineInc = !fineInc;
     Draw(true);
 }
@@ -65,6 +80,9 @@ void
 LinearValueSelector::OnRotEncClick(bool dir)
 {
     AtomicSection as;
+    if (readOnly) {
+        return;
+    }
     bool changed = false;
     u16 inc = (maxValue - minValue) / 100;
     if (inc == 0) {
@@ -100,6 +118,7 @@ LinearValueSelector::OnRotEncClick(bool dir)
 void
 LinearValueSelector::Poll()
 {
+    Page::Poll();
     AtomicSection as;
     if (drawPending && !drawInProgress) {
         drawPending = false;

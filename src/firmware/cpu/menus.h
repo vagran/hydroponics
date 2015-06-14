@@ -37,4 +37,11 @@ namespace SetupMenu {
     Fabric(void *p);
 }
 
+namespace StatusMenu {
+    extern const Menu::Action actions[] PROGMEM;
+
+    void
+    Fabric(void *p);
+}
+
 #endif /* MENUS_H_ */

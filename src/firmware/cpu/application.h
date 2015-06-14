@@ -14,6 +14,10 @@
 /** Base class for displayed page. */
 class Page {
 public:
+    typedef void (*PollHandler)();
+
+    PollHandler poll = nullptr;
+
     Page()
     {
         display.Clear();
@@ -21,8 +25,7 @@ public:
 
     /** Called in periodically polling loop. */
     virtual void
-    Poll()
-    {}
+    Poll();
 
     virtual void
     OnButtonPressed()
@@ -53,10 +56,10 @@ public:
 };
 
 /* Pages. */
+#include "linear_value_selector.h"
 #include "main_page.h"
 #include "pages.h"
 #include "menu.h"
-#include "linear_value_selector.h"
 
 /** Encapsulates high-level application logic. */
 class Application {

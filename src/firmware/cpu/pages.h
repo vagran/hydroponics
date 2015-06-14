@@ -10,15 +10,24 @@
 #define PAGES_H_
 
 namespace ManCtrl_Light {
+    using TPage = LinearValueSelector;
 
     void
     Fabric(void *p);
 };
 
 namespace ManCtrl_Pump {
+    using TPage = LinearValueSelector;
 
     void
     Fabric(void *p);
 };
+
+namespace Status_LvlGauge {
+    using TPage = LinearValueSelector;
+
+    void
+    Fabric(void *p);
+}
 
 #endif /* PAGES_H_ */

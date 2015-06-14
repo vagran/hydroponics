@@ -14,6 +14,14 @@ using namespace adk;
 
 Application app;
 
+void
+Page::Poll()
+{
+    if (poll) {
+        poll();
+    }
+}
+
 Application::Application()
 {
     SetNextPage(GetPageTypeCode<MainPage>(), MainPage::Fabric);

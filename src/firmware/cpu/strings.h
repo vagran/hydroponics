@@ -23,13 +23,15 @@ public:
     DEF_STR(Fine, " Fine ")
     DEF_STR(LightControl, "Light control")
     DEF_STR(PumpControl, "Pump control")
+    DEF_STR(LvlGaugeStatus, "Level gauge status")
 
     /* Menus */
     DEF_STR(MainMenu,
             "Return\0"
             "Manual control\0"
             "Calibration\0"
-            "Setup\0")
+            "Setup\0"
+            "Status\0")
 
     DEF_STR(ManualControlMenu,
             "Return\0"
@@ -47,6 +49,12 @@ public:
             "Time\0"
             "Flooding\0"
             "Lighting\0")
+
+    DEF_STR(StatusMenu,
+            "Return\0"
+            "Lighting\0"
+            "Level gauge\0"
+            "Temperature\0")
 
 } __PACKED;
 

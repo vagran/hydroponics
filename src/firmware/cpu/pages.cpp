@@ -28,11 +28,8 @@ OnChanged(u16 value)
 void
 Fabric(void *p)
 {
-    LinearValueSelector *sel =
-        new (p) LinearValueSelector(strings.LightControl, light.GetLevel(),
-                                    0, 255);
-    Menu::returnPos = Menu::FindAction(ManualControlMenu::actions,
-                                       ManCtrl_Light::Fabric);
+    TPage *sel = new (p) TPage(strings.LightControl, light.GetLevel(), 0, 255);
+    Menu::returnPos = Menu::FindAction(ManualControlMenu::actions, Fabric);
     sel->onClosed = OnClosed;
     sel->onChanged = OnChanged;
 }
@@ -58,13 +55,38 @@ OnChanged(u16 value)
 void
 Fabric(void *p)
 {
-    LinearValueSelector *sel =
-        new (p) LinearValueSelector(strings.PumpControl, pump.GetLevel(),
-                                    0, 255);
-    Menu::returnPos = Menu::FindAction(ManualControlMenu::actions,
-                                       ManCtrl_Pump::Fabric);
+    TPage *sel = new (p) TPage(strings.PumpControl, pump.GetLevel(), 0, 255);
+    Menu::returnPos = Menu::FindAction(ManualControlMenu::actions, Fabric);
     sel->onClosed = OnClosed;
     sel->onChanged = OnChanged;
 }
 
 } /* namespace ManCtrl_Pump */
+
+
+namespace Status_LvlGauge {
+
+void
+OnClosed(u16)
+{
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    StatusMenu::Fabric);
+}
+
+void
+Poll()
+{
+    static_cast<TPage *>(app.CurPage())->SetValue(lvlGauge.GetRawValue());
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.LvlGaugeStatus, lvlGauge.GetRawValue(),
+                               0, 0xffff, true);
+    Menu::returnPos = Menu::FindAction(StatusMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+    sel->poll = Poll;
+}
+
+} /* namespace Status_LvlGauge */
