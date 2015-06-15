@@ -109,6 +109,7 @@ MainPage::IssueDrawRequest()
                                &bitmaps.SiphonWall, false,
                                _DrawHandler);
             return;
+
         case DrawState::POT_WALLS_PUMP1:
             bitmapWriter.Write(POT_COL - 4, POT_PAGE + 2,
                                &bitmaps.PumpPipeTop, false,
@@ -135,7 +136,7 @@ MainPage::IssueDrawRequest()
         default:
             break;
         }
-    } while (drawMask && drawState < DrawState::LAST);
+    } while (drawMask || drawState < DrawState::LAST);
     drawInProgress = false;
 }
 
