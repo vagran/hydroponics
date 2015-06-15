@@ -46,20 +46,25 @@ private:
         POT_WALLS_PUMP2,
 
         PUMP,
-        LAST = PUMP
+        DRAIN,
+        DONE
     };
 
     enum DrawMask {
-        M_STATIC =     0x0001,
-        M_PUMP =       0x0002,
+        M_STATIC =      0x0001,
+        M_PUMP =        0x0002,
+        M_DRAIN =       0x0004,
 
-        M_ALL = M_STATIC | M_PUMP
+        M_ALL = M_STATIC | M_PUMP | M_DRAIN
     };
 
     u8 drawState:5,
        drawInProgress:1,
        closeRequested:1,
-       pumpActive:1;
+       pumpActive:1,
+
+       drainActive:1,
+       reserved:7;
 
     u16 drawMask;
 

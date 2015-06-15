@@ -48,26 +48,6 @@ Display::Output(Viewport vp, GraphicsProvider provider)
     scheduler.SchedulePoll();
 }
 
-//static bool
-//TestTransferHandler(I2cBus::TransferStatus status, u8)
-//{
-//    static u8 count;
-//    if (status == I2cBus::TransferStatus::TRANSMIT_READY ||
-//        status == I2cBus::TransferStatus::BYTE_TRANSMITTED) {
-//
-//        if (count == 0) {
-//            i2cBus.TransmitByte(0x40);
-//        } else if (count < 9) {
-//            i2cBus.TransmitByte(0xff);
-//        } else {
-//            return false;
-//        }
-//        count++;
-//        return true;
-//    }
-//    return false;
-//}
-
 void
 Display::Poll()
 {
@@ -80,12 +60,6 @@ Display::Poll()
             i2cBus.RequestTransfer(DISPLAY_ADDRESS, true, OutputTransferHandler);
         }
     }
-//    //XXX
-//    static bool testDone;
-//    if (!testDone) {
-//        testDone = true;
-//        i2cBus.RequestTransfer(DISPLAY_ADDRESS, true, TestTransferHandler);
-//    }
 }
 
 void

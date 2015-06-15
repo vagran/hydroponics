@@ -21,6 +21,8 @@ MainPage::MainPage()
     drawMask = DrawMask::M_ALL;
     drawInProgress = false;
     closeRequested = false;
+    pumpActive = false;
+    drainActive = false;
 }
 
 void
@@ -36,7 +38,8 @@ MainPage::OnRotEncClick(bool dir __UNUSED/*XXX*/)
     //XXX
     AtomicSection as;
     pumpActive = !pumpActive;
-    Draw(DrawMask::M_PUMP);
+    drainActive = !drainActive;
+    Draw(DrawMask::M_PUMP | DrawMask::M_DRAIN);
 }
 
 void
@@ -68,6 +71,7 @@ MainPage::Draw(u16 mask)
     if (drawInProgress) {
         return;
     }
+    drawInProgress = true;
     drawState = 0;
     IssueDrawRequest();
 }
@@ -111,20 +115,20 @@ MainPage::IssueDrawRequest()
             return;
 
         case DrawState::POT_WALLS_PUMP1:
-            bitmapWriter.Write(POT_COL - 4, POT_PAGE + 2,
+            bitmapWriter.Write(POT_COL - 5, POT_PAGE + 2,
                                &bitmaps.PumpPipeTop, false,
                                _DrawHandler);
             return;
 
         case DrawState::POT_WALLS_PUMP2:
-            bitmapWriter.Write(POT_COL - 4, POT_PAGE + 4,
+            bitmapWriter.Write(POT_COL - 5, POT_PAGE + 4,
                                &bitmaps.PumpPipeBottom, false,
                                _DrawHandler);
             return;
 
         case DrawState::PUMP:
             if (!(drawMask & DrawMask::M_PUMP)) {
-                drawState = DrawState::PUMP;//XXX
+                drawState = DrawState::DRAIN;
                 break;
             }
             drawMask &= ~DrawMask::M_PUMP;
@@ -133,10 +137,25 @@ MainPage::IssueDrawRequest()
                                false, _DrawHandler);
             return;
 
+        case DrawState::DRAIN:
+            if (!(drawMask & DrawMask::M_DRAIN)) {
+                drawState = DrawState::DONE;//XXX
+                break;
+            }
+            drawMask &= ~DrawMask::M_DRAIN;
+            if (drainActive) {
+                bitmapWriter.Write(POT_COL + 17, POT_PAGE + 1,
+                                   &bitmaps.SyphonDrain, false, _DrawHandler);
+            } else {
+                bitmapWriter.Clear(POT_COL + 17, POT_PAGE + 1,
+                                   &bitmaps.SyphonDrain, false, _DrawHandler);
+            }
+            return;
+
         default:
             break;
         }
-    } while (drawMask || drawState < DrawState::LAST);
+    } while (drawMask && drawState < DrawState::DONE);
     drawInProgress = false;
 }
 
@@ -149,8 +168,8 @@ MainPage::DrawHandler()
         drawInProgress = false;
         return;
     }
-    if (drawState != DrawState::LAST) {
-        drawState++;
+    drawState++;
+    if (drawState != DrawState::DONE) {
         IssueDrawRequest();
         return;
     }
