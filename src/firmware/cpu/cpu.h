@@ -17,16 +17,16 @@ AdcSleepEnabled();
 
 //XXX revise
 /** Port for button. */
-#define BUTTON_PORT   C
+#define BUTTON_PORT   D
 /** Pin for button. */
 #define BUTTON_PIN    2
 
 /** Port for rotary encoder line A. */
-#define ROT_ENC_A_PORT   C
+#define ROT_ENC_A_PORT   D
 /** Pin for rotary encoder line A. */
 #define ROT_ENC_A_PIN    0
 /** Port for rotary encoder line B. */
-#define ROT_ENC_B_PORT   C
+#define ROT_ENC_B_PORT   D
 /** Pin for rotary encoder line B. */
 #define ROT_ENC_B_PIN    1
 

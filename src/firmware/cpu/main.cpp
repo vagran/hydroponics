@@ -202,9 +202,9 @@ public:
         AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_A_PORT), ROT_ENC_A_PIN);
         AVR_BIT_SET8(AVR_REG_PORT(ROT_ENC_B_PORT), ROT_ENC_B_PIN);
         /* Use pin-change interrupts for rotary encoder processing. */
-        AVR_BIT_SET8(PCICR, PCIE1);
-        AVR_BIT_SET8(PCMSK1, PCINT8);
-        AVR_BIT_SET8(PCMSK1, PCINT9);
+        AVR_BIT_SET8(PCICR, PCIE2);
+        AVR_BIT_SET8(PCMSK2, PCINT16);
+        AVR_BIT_SET8(PCMSK2, PCINT17);
     }
 
     /** Filter jittering on line A. */
@@ -341,7 +341,7 @@ ISR(TIMER0_COMPB_vect)
 }
 
 // May be used also for other events.
-ISR(PCINT1_vect)
+ISR(PCINT2_vect)
 {
     rotEnc.HandlePinChangeInterrupt();
 }
