@@ -30,6 +30,16 @@ namespace Status_LvlGauge {
     Fabric(void *p);
 }
 
+namespace Status_LightSensor {
+    using TPage = LinearValueSelector;
+
+    void
+    FabricA(void *p);
+
+    void
+    FabricB(void *p);
+}
+
 namespace ClbLvlGauge_MinValue {
     using TPage = LinearValueSelector;
 

@@ -422,6 +422,7 @@ main(void)
     display.Initialize();
     display.Clear();
     lvlGauge.Enable();
+    light.Enable();
 
     //XXX
     DDRB |= 0x1e;

@@ -26,6 +26,8 @@ public:
     DEF_STR(LvlGaugeStatus, "Level gauge status")
     DEF_STR(LvlGaugeClbMin, "Level gauge min.")
     DEF_STR(LvlGaugeClbMax, "Level gauge max.")
+    DEF_STR(LightSensorA, "Light sensor A")
+    DEF_STR(LightSensorB, "Light sensor B")
 
     /* Menus */
     DEF_STR(MainMenu,
@@ -54,8 +56,9 @@ public:
 
     DEF_STR(StatusMenu,
             "Return\0"
-            "Lighting\0"
             "Level gauge\0"
+            "Light sensor A\0"
+            "Light sensor B\0"
             "Temperature\0")
 
     DEF_STR(LvlGaugeCalibrationMenu,

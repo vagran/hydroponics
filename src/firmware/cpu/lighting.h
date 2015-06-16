@@ -17,6 +17,9 @@ public:
     };
 
     void
+    Enable();
+
+    void
     SetLevel(u8 lvl)
     {
         curLevel = lvl;
@@ -29,11 +32,30 @@ public:
         return curLevel;
     }
 
+    u8
+    GetSensorA()
+    {
+        return curSensorA;
+    }
+
+    u8
+    GetSensorB()
+    {
+        return curSensorB;
+    }
+
     void
     OnAdcResult(u8 channel, u16 value);
 
 private:
+    enum {
+        MEASUREMENT_PERIOD = TASK_DELAY_S(2)
+    };
+
     u8 curLevel = 0;
+    u8 curSensorA, curSensorB;
+
+    static u16 PeriodicTask();
 
 } __PACKED;
 

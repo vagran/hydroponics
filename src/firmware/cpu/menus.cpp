@@ -94,9 +94,12 @@ namespace StatusMenu {
 
 const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
-    {0, nullptr},
     {Application::GetPageTypeCode<Status_LvlGauge::TPage>(),
      Status_LvlGauge::Fabric},
+    {Application::GetPageTypeCode<Status_LightSensor::TPage>(),
+     Status_LightSensor::FabricA},
+    {Application::GetPageTypeCode<Status_LightSensor::TPage>(),
+     Status_LightSensor::FabricB},
     {0, nullptr},
     MENU_ACTIONS_END
 };

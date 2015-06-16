@@ -13,7 +13,25 @@ using namespace adk;
 Light light;
 
 void
-Light::OnAdcResult(u8 channel __UNUSED, u16 value __UNUSED)
+Light::OnAdcResult(u8 channel, u16 value)
 {
-    //XXX
+    if (channel == AdcChannel::SENSOR_A) {
+        curSensorA = value >> 2;
+    } else if (channel == AdcChannel::SENSOR_B) {
+        curSensorB = value >> 2;
+    }
+}
+
+void
+Light::Enable()
+{
+    scheduler.ScheduleTask(PeriodicTask, MEASUREMENT_PERIOD);
+}
+
+u16
+Light::PeriodicTask()
+{
+    adc.ScheduleConversion(AdcChannel::SENSOR_A);
+    adc.ScheduleConversion(AdcChannel::SENSOR_B);
+    return MEASUREMENT_PERIOD;
 }

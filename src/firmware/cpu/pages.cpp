@@ -92,6 +92,51 @@ Fabric(void *p)
 } /* namespace Status_LvlGauge */
 
 
+namespace Status_LightSensor {
+
+struct {
+    u8 sensorA:1;
+} g;
+
+void
+OnClosed(u16)
+{
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    StatusMenu::Fabric);
+}
+
+void
+Poll()
+{
+    static_cast<TPage *>(app.CurPage())->SetValue(
+        g.sensorA ? light.GetSensorA() : light.GetSensorB());
+}
+
+void
+FabricA(void *p)
+{
+    g.sensorA = true;
+    TPage *sel = new (p) TPage(strings.LightSensorA, light.GetSensorA(),
+                               0, 0xff, true);
+    Menu::returnPos = Menu::FindAction(StatusMenu::actions, FabricA);
+    sel->onClosed = OnClosed;
+    sel->poll = Poll;
+}
+
+void
+FabricB(void *p)
+{
+    g.sensorA = false;
+    TPage *sel = new (p) TPage(strings.LightSensorB, light.GetSensorB(),
+                               0, 0xff, true);
+    Menu::returnPos = Menu::FindAction(StatusMenu::actions, FabricB);
+    sel->onClosed = OnClosed;
+    sel->poll = Poll;
+}
+
+} /* namespace Status_LightSensor */
+
+
 namespace ClbLvlGauge_MinValue {
 
 void
