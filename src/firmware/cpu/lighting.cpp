@@ -11,3 +11,9 @@
 using namespace adk;
 
 Light light;
+
+void
+Light::OnAdcResult(u8 channel __UNUSED, u16 value __UNUSED)
+{
+    //XXX
+}

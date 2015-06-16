@@ -7,9 +7,9 @@
 #define CPU_H_
 
 bool
-AdcSleepEnabled();
+SleepEnabled();
 
-#define SCHEDULER_CHECK_SLEEPING_ALLOWED AdcSleepEnabled
+#define SCHEDULER_CHECK_SLEEPING_ALLOWED SleepEnabled
 
 #define I2C_USE_PULLUP
 
@@ -125,6 +125,7 @@ extern Clock clock;
 
 #include "strings.h"
 #include "i2c.h"
+#include "adc.h"
 #include "display.h"
 #include "text_writer.h"
 #include "bitmap.h"

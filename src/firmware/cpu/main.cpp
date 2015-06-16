@@ -3,14 +3,12 @@
  * All rights reserved.
  * See COPYING file for copyright details.
  */
+
 #include "cpu.h"
 
 using namespace adk;
 
 const Strings strings PROGMEM;
-
-static inline void
-OnAdcResult(u8 type, u16 value);
 
 /* ****************************************************************************/
 /* System clock and scheduler. */
@@ -29,69 +27,6 @@ Clock::Clock()
     /* CLK / 1024, Normal mode. */
     TCCR0B = _BV(CS02) | _BV(CS00);
     TIMSK0 = _BV(TOIE0);
-}
-
-/* ****************************************************************************/
-/* ADC */
-
-#define ADC_IN_BATTERY  _BV(MUX0) //XXX revise
-#define ADC_IN_TEMP     _BV(MUX3)
-
-#define ADC_IN_MASK     (ADC_IN_BATTERY | ADC_IN_TEMP)
-
-static inline void
-AdcInit()
-{
-    /* Internal 1.1V reference. */
-    ADMUX = _BV(REFS1);
-    ADCSRA = _BV(ADEN) | _BV(ADIE) | _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2);
-    DIDR0 = _BV(ADC1D);
-}
-
-static u8 g_adcPending, g_adcCurrent, g_adcSkip;
-
-/** Prevent MCU from sleeping when ADC conversion in progress (since it will
- * probably stop I/O clock and will fail the conversion).
- */
-bool
-AdcSleepEnabled()
-{
-    return g_adcCurrent == 0 && g_adcPending == 0;
-}
-
-static inline void
-_StartConvertion(u8 input)
-{
-    ADMUX = (ADMUX & ~ADC_IN_MASK) | input;
-    AVR_BIT_SET8(ADCSRA, ADSC);
-}
-
-static inline void
-AdcStart(u8 input)
-{
-    AtomicSection as;
-
-    if (g_adcCurrent == 0) {
-        g_adcSkip = 2;
-        g_adcCurrent = input;
-        _StartConvertion(input);
-    } else {
-        g_adcPending = input;
-    }
-}
-
-ISR(ADC_vect)
-{
-    if (g_adcSkip) {
-        g_adcSkip--;
-    } else {
-        OnAdcResult(g_adcCurrent, (u16)ADCL | ((u16)ADCH << 8));
-        g_adcCurrent = g_adcPending;
-        g_adcPending = FALSE;
-    }
-    if (g_adcCurrent) {
-        _StartConvertion(g_adcCurrent);
-    }
 }
 
 /* ****************************************************************************/
@@ -460,20 +395,11 @@ Pwm3Get()
 
 
 /* ****************************************************************************/
-/* XXX */
 
-static inline void
-OnAdcResult(u8 type __UNUSED, u16 value __UNUSED)
+bool
+SleepEnabled()
 {
-    //XXX
-//    if (type == ADC_IN_BATTERY) {
-//        g_wat.curBat = value;
-//        if (g_temp.pending) {
-//            AdcStart(ADC_IN_TEMP);
-//        }
-//    } else {
-//        TempFeedValue(value);
-//    }
+    return adc.SleepEnabled();
 }
 
 void
@@ -485,6 +411,7 @@ adk::PollFunc()
     textWriter.Poll();
     bitmapWriter.Poll();
     app.Poll();
+    adc.Poll();
 }
 
 int

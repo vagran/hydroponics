@@ -11,6 +11,11 @@
 
 class Light {
 public:
+    enum AdcChannel {
+        SENSOR_A = 0,
+        SENSOR_B = 1
+    };
+
     void
     SetLevel(u8 lvl)
     {
@@ -24,10 +29,13 @@ public:
         return curLevel;
     }
 
+    void
+    OnAdcResult(u8 channel, u16 value);
+
 private:
     u8 curLevel = 0;
 
-};
+} __PACKED;
 
 extern Light light;
 
