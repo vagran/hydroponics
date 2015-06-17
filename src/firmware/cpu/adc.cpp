@@ -24,8 +24,8 @@ OnAdcResult(u8 channel, u16 result)
 
 Adc::Adc()
 {
-    /* Internal 1.1V reference. */
-    ADMUX = _BV(REFS1);
+    /* Internal Vcc reference. */
+    ADMUX = _BV(REFS0);
     ADCSRA = _BV(ADEN) | _BV(ADIE) | _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2);
     inProgress = false;
     curChannel = 0;
