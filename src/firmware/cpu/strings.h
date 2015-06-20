@@ -66,6 +66,7 @@ public:
             "Min. value\0"
             "Max. value\0")
 
+    DEF_STR(TestLongStatus, "This is very very long test status string.")
 } __PACKED;
 
 extern const Strings strings PROGMEM;

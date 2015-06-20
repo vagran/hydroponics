@@ -17,6 +17,20 @@ public:
 
     MainPage();
 
+    /** Set status line text. String read from RAM. */
+    void
+    SetStatus(char *status)
+    {
+        SetStatus(status, false);
+    }
+
+    /** Set status line text. String read from program memory. */
+    void
+    SetStatus(const char *status)
+    {
+        SetStatus(status, true);
+    }
+
 
     virtual void
     OnButtonPressed() override;
@@ -34,7 +48,8 @@ private:
     enum {
         POT_COL = 104,
         POT_PAGE = 1,
-        MAX_WATER_LEVEL = 21
+        MAX_WATER_LEVEL = 21,
+        ANIMATION_PERIOD = TASK_DELAY_MS(500)
     };
 
     enum DrawState {
@@ -50,6 +65,7 @@ private:
         DRAIN,
         TOP_WATER,
         BOTTOM_WATER,
+        STATUS,
         DONE
     };
 
@@ -59,8 +75,10 @@ private:
         M_DRAIN =           0x0004,
         M_TOP_WATER =       0x0008,
         M_BOTTOM_WATER =    0x0010,
+        M_STATUS =          0x0020,
 
-        M_ALL = M_STATIC | M_PUMP | M_DRAIN | M_TOP_WATER | M_BOTTOM_WATER
+        M_ALL = M_STATIC | M_PUMP | M_DRAIN | M_TOP_WATER | M_BOTTOM_WATER |
+                M_STATUS
     };
 
     u8 drawState:5,
@@ -70,12 +88,20 @@ private:
 
        watLevelTop:5,
        drainActive:1,
-       reserved:2,
+       isStatusPgm:1,
+       /** Current scrolling direction of long status text. */
+       statusScrollDir:1,
 
        watLevelBottom:5,
-       reserved2:3;
+       statusPause:1,
+       reserved:2;
 
     u16 drawMask;
+    const char *status = nullptr;
+    /** Length of status string. */
+    u8 statusLen = 0,
+    /** Current scrolling offset of long status string. */
+       statusOffset;
 
     void
     Draw(u16 mask);
@@ -97,6 +123,15 @@ private:
      */
     void
     IssueDrawRequest();
+
+    void
+    SetStatus(const char *status, bool isPgm);
+
+    static u16
+    _AnimationTask();
+
+    u16
+    AnimationTask();
 
 } __PACKED;
 

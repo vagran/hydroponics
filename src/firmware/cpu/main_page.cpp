@@ -24,9 +24,13 @@ MainPage::MainPage()
     pumpActive = false;
     drainActive = false;
 
+    scheduler.ScheduleTask(_AnimationTask, ANIMATION_PERIOD);
+
     //XXX
     watLevelBottom = MAX_WATER_LEVEL;
     watLevelTop = 0;
+
+    SetStatus(strings.TestLongStatus);//XXX
 }
 
 void
@@ -76,7 +80,10 @@ bool
 MainPage::RequestClose()
 {
     AtomicSection as;
-    closeRequested = true;
+    if (!closeRequested) {
+        closeRequested = true;
+        scheduler.UnscheduleTask(_AnimationTask);
+    }
     return !drawInProgress;
 }
 
@@ -185,7 +192,7 @@ MainPage::IssueDrawRequest()
 
         case DrawState::BOTTOM_WATER:
             if (!(drawMask & DrawMask::M_BOTTOM_WATER)) {
-                drawState = DrawState::DONE;
+                drawState = DrawState::STATUS;
                 break;
             }
             drawMask &= ~DrawMask::M_BOTTOM_WATER;
@@ -194,6 +201,27 @@ MainPage::IssueDrawRequest()
                            _DisplayOutputHandler);
             return;
 
+       case DrawState::STATUS:
+            if (!(drawMask & DrawMask::M_STATUS)) {
+                drawState = DrawState::DONE;
+                break;
+            }
+            drawMask &= ~DrawMask::M_STATUS;
+            if (!status) {
+                display.Clear(Display::Viewport{0, 127, 7, 7});
+                drawState = DrawState::DONE;
+                break;
+            }
+            if (isStatusPgm) {
+                textWriter.Write(Display::Viewport{0, 127, 7, 7},
+                                 status + statusOffset, false,
+                                 true, _DrawHandler);
+            } else {
+                textWriter.Write(Display::Viewport{0, 127, 7, 7},
+                                 const_cast<char *>(status) + statusOffset, false,
+                                 true, _DrawHandler);
+            }
+            return;
         default:
             break;
         }
@@ -304,4 +332,62 @@ MainPage::_DisplayOutputHandler(u8 column, u8 page, u8 *data)
 {
     return static_cast<MainPage *>(app.CurPage())->
         DisplayOutputHandler(column, page, data);
+}
+
+void
+MainPage::SetStatus(const char *status, bool isPgm)
+{
+    AtomicSection as;
+    this->status = status;
+    isStatusPgm = isPgm;
+    statusOffset = 0;
+    statusScrollDir = false;
+    if (status) {
+        if (isPgm) {
+            statusLen = strlen_P(status);
+        } else {
+            statusLen = strlen(status);
+        }
+    } else {
+        statusLen = 0;
+    }
+    Draw(DrawMask::M_STATUS);
+}
+
+u16
+MainPage::_AnimationTask()
+{
+    return static_cast<MainPage *>(app.CurPage())->
+        AnimationTask();
+}
+
+u16
+MainPage::AnimationTask()
+{
+    if (statusLen > 18) {
+        bool pauseSet = false;
+        if (!statusPause) {
+            if (statusOffset == 0) {
+                statusScrollDir = false;
+                statusPause = true;
+                pauseSet = true;
+            } else if (statusOffset == statusLen - 18) {
+                statusScrollDir = true;
+                statusPause = true;
+                pauseSet = true;
+            }
+        } else {
+            statusPause = false;
+        }
+
+        if (!pauseSet) {
+            if (statusScrollDir) {
+                statusOffset--;
+            } else {
+                statusOffset++;
+            }
+            Draw(DrawMask::M_STATUS);
+        }
+    }
+    return ANIMATION_PERIOD;
 }

@@ -311,8 +311,7 @@ ClearOutputHandler(u8, u8, u8 *data)
 }
 
 void
-Display::Clear()
+Display::Clear(Viewport vp)
 {
-    Output(Viewport { 0, DISPLAY_COLUMNS - 1, 0, DISPLAY_PAGES - 1 },
-           ClearOutputHandler);
+    Output(vp, ClearOutputHandler);
 }

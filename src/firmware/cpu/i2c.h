@@ -33,7 +33,7 @@
 
 /** Maximal number of queued I2C transfer request. */
 #ifndef I2C_REQ_QUEUE_SIZE
-#define I2C_REQ_QUEUE_SIZE 4
+#define I2C_REQ_QUEUE_SIZE 8
 #endif
 
 #define I2C_REQ_QUEUE_PTR_BITS 4
@@ -197,6 +197,7 @@ private:
     /** Transfer at current queue position should be started by repeated start. */
        instantTransferPending:1,
        state:3,
+
    /** Send NACK on next received byte. */
        nackPending:1,
    /** Next transmission byte specified. */

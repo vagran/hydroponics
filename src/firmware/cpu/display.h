@@ -52,7 +52,14 @@ public:
 
     /** Clear the entire display content. */
     void
-    Clear();
+    Clear()
+    {
+        Clear(Viewport{0, DISPLAY_COLUMNS - 1, 0, DISPLAY_PAGES - 1});
+    }
+
+    /** Clear the provided viewport. */
+    void
+    Clear(Viewport vp);
 
 private:
     enum {
@@ -61,7 +68,7 @@ private:
          */
         MAX_CMD_SIZE = 3,
         /** Maximal number of queued output requests. */
-        MAX_OUT_REQS = 4,
+        MAX_OUT_REQS = 8,
 
         /** Second byte for CHARGE_PUMP command. */
         CHARGE_PUMP_ENABLE =    0x14,
@@ -145,9 +152,7 @@ private:
     /** Counter for initialization sequence. */
        initCounter:5,
     /** Current output request index. */
-       curOutReq:2,
-    /** Output request execution is in progress. */
-       outInProgress:1,
+       curOutReq:3,
 
     /** Current output column. */
        curColumn:7,
@@ -161,7 +166,10 @@ private:
     /** Control byte sent for output data. */
        outDataCtrlSent:1,
     /** Current output request complete. */
-       outReqComplete:1;
+       outReqComplete:1,
+
+   /** Output request execution is in progress. */
+       outInProgress:1;
     OutputReq outQueue[MAX_OUT_REQS];
     /** Currently active viewport. */
     Viewport curVp;
