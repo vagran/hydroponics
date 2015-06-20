@@ -239,7 +239,7 @@ private:
     ReceiveByte()
     {
         TWCR = (TWCR & ~(_BV(TWINT) | _BV(TWSTA) | _BV(TWSTO) | _BV(TWEA))) |
-                (_BV(TWINT) | (nackPending ? _BV(TWEA) : 0));
+                (_BV(TWINT) | (nackPending ? 0 : _BV(TWEA)));
         nackPending = false;
     }
 

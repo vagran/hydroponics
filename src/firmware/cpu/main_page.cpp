@@ -64,6 +64,19 @@ MainPage::OnRotEncClick(bool dir __UNUSED/*XXX*/)
     }
     Draw(DrawMask::M_PUMP | DrawMask::M_DRAIN | DrawMask::M_BOTTOM_WATER |
          DrawMask::M_TOP_WATER);
+
+    //XXX
+    static char buf[16];
+    Rtc::Time time = rtc.GetTime();
+    utoa(time.hour, buf, 10);
+    u8 len = strlen(buf);
+    buf[len] = ':';
+    utoa(time.min, &buf[len + 1], 10);
+    len = strlen(buf);
+    buf[len] = ':';
+    utoa(time.sec, &buf[len + 1], 10);
+    SetStatus(buf);
+    rtc.Update();
 }
 
 void

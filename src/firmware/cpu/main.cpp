@@ -407,11 +407,12 @@ adk::PollFunc()
 {
     rotEnc.Poll();
     i2cBus.Poll();
+    adc.Poll();
+    rtc.Poll();
     display.Poll();
     textWriter.Poll();
     bitmapWriter.Poll();
     app.Poll();
-    adc.Poll();
 }
 
 int
@@ -419,10 +420,12 @@ main(void)
 {
     BtnInit();
     PwmInit();
+    rtc.Initialize();
     display.Initialize();
     display.Clear();
     lvlGauge.Enable();
     light.Enable();
+    app.Initialize();
 
     //XXX
     DDRB |= 0x1e;

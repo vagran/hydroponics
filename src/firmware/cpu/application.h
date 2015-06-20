@@ -67,6 +67,9 @@ public:
     Application();
 
     void
+    Initialize();
+
+    void
     Poll();
 
     void
@@ -120,6 +123,12 @@ private:
 
     void
     SetPage(VariantFabric page);
+
+    static u16
+    _Tick();
+
+    u16
+    Tick();
 };
 
 extern Application app;

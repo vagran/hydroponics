@@ -28,6 +28,12 @@ Application::Application()
 }
 
 void
+Application::Initialize()
+{
+    scheduler.ScheduleTask(_Tick, TASK_DELAY_S(1));
+}
+
+void
 Application::SetNextPage(u8 pageTypeCode, VariantFabric page)
 {
     AtomicSection as;
@@ -83,4 +89,18 @@ Application::SetPage(VariantFabric page)
 {
     curPage.Engage(nextPageTypeCode, page);
     nextPage = nullptr;
+}
+
+u16
+Application::_Tick()
+{
+    return app.Tick();
+}
+
+u16
+Application::Tick()
+{
+    rtc.Update();
+    //XXX
+    return TASK_DELAY_S(60);
 }

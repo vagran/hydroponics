@@ -126,6 +126,7 @@ extern Clock clock;
 #include "strings.h"
 #include "i2c.h"
 #include "adc.h"
+#include "rtc.h"
 #include "display.h"
 #include "text_writer.h"
 #include "bitmap.h"
