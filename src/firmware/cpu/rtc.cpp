@@ -24,16 +24,30 @@ Rtc::Rtc()
 void
 Rtc::Initialize()
 {
+    regs.a1ie = false;
+    regs.a2ie = false;
+    regs.intcn = true;
+    /* 4kHz */
+    regs.rs1 = 1;
+    regs.rs2 = 0;
+    regs.conv = false;
+    regs.bbsqw = false;
+    regs.eosc = false;
+
+    writeMask = 1 << 0xe;
     readPending = true;
-    Poll();
+
     while (true) {
+        sei();
+        Poll();
+        i2cBus.Poll();
+        cli();
         {
             AtomicSection as;
-            if (!readPending) {
+            if (!readPending && !readInProgress && !writeInProgress) {
                 break;
             }
         }
-        _delay_ms(100);
     }
 }
 
@@ -55,7 +69,10 @@ Rtc::Poll()
 void
 Rtc::StartWrite()
 {
-    //XXX
+    writeInProgress = true;
+    curAddr = 0;
+    NextWriteAddr();
+    i2cBus.RequestTransfer(I2C_ADDRESS, true, _TransferHandler);
 }
 
 void
@@ -94,13 +111,13 @@ Rtc::TransferHandler(I2cBus::TransferStatus status, u8 data)
             if (status == I2cBus::TransferStatus::RECEIVE_READY) {
                 /* Do nothing */
             } else if (status == I2cBus::TransferStatus::BYTE_RECEIVED) {
-                *(reinterpret_cast<u8 *>(&regs) + curAddr) = data;
+                reinterpret_cast<u8 *>(&regs)[curAddr] = data;
                 curAddr++;
                 if (curAddr == 0x12) {
                     i2cBus.Nack();
                 }
             } else if (status == I2cBus::TransferStatus::LAST_BYTE_RECEIVED) {
-                *(reinterpret_cast<u8 *>(&regs) + curAddr) = data;
+                reinterpret_cast<u8 *>(&regs)[curAddr] = data;
                 curAddr++;
                 if (curAddr > 0x12) {
                     curAddr = 0;
@@ -114,7 +131,26 @@ Rtc::TransferHandler(I2cBus::TransferStatus status, u8 data)
             }
         }
     } else if (writeInProgress) {
-        //XXX
+        if (status == I2cBus::TransferStatus::TRANSMIT_READY) {
+            i2cBus.TransmitByte(curAddr);
+        } else if (status == I2cBus::TransferStatus::BYTE_TRANSMITTED) {
+            if (writeMask) {
+                if (NextWriteAddr()) {
+                    i2cBus.RequestInstantTransfer(I2C_ADDRESS, true, _TransferHandler);
+                } else {
+                    i2cBus.TransmitByte(reinterpret_cast<u8 *>(&regs)[curAddr]);
+                    writeMask &= ~(1 << curAddr);
+                    curAddr++;
+                }
+            } else {
+                writeInProgress = false;
+                return false;
+            }
+        } else {
+            writeInProgress = false;
+            failure = true;
+            return false;
+        }
     } else {
         return false;
     }
@@ -125,7 +161,7 @@ Rtc::Time
 Rtc::GetTime()
 {
     AtomicSection as;
-    u8 hour = regs.hour_low;
+    u8 hour = regs.hour_lo;
     if (regs.hour_10) {
         hour += 10;
     }
@@ -136,8 +172,8 @@ Rtc::GetTime()
     } else if (regs.hour_20_ampm) {
         hour += 20;
     }
-    return Time { hour, static_cast<u8>(regs.min_hi * 10 + regs.min_low),
-                  static_cast<u8>(regs.sec_hi * 10 + regs.sec_low) };
+    return Time { hour, static_cast<u8>(regs.min_hi * 10 + regs.min_lo),
+                  static_cast<u8>(regs.sec_hi * 10 + regs.sec_lo) };
 }
 
 void
@@ -145,4 +181,19 @@ Rtc::Update()
 {
     AtomicSection as;
     readPending = true;
+}
+
+bool
+Rtc::NextWriteAddr()
+{
+    bool incremented = false;
+    while (true) {
+        for (;curAddr < 0x10; curAddr++) {
+            if (writeMask & (1 << curAddr)) {
+                return incremented;
+            }
+            incremented = true;
+        }
+        curAddr = 0;
+    }
 }

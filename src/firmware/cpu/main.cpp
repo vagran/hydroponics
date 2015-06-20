@@ -420,15 +420,16 @@ main(void)
 {
     BtnInit();
     PwmInit();
+
+    //XXX
+    DDRB |= 0x1e;
+
     rtc.Initialize();
     display.Initialize();
     display.Clear();
     lvlGauge.Enable();
     light.Enable();
     app.Initialize();
-
-    //XXX
-    DDRB |= 0x1e;
 
     scheduler.Run();
 }
