@@ -19,8 +19,10 @@ conf = adk.Conf(
     # MCU clock frequency in Hz
     MCU_FREQ = 20000000,
     
-    # L 0b11010111 H 0b11010111- 20MHz
-    MCU_LFUSE = 0xd7,
-    MCU_HFUSE = 0xd7
+    # 20MHz low power crystal with maximal startup delay.
+    MCU_LFUSE = 0b11111111,
+    MCU_HFUSE = 0b11011111,
+    # BOD level 4.3V
+    MCU_EFUSE = 0b00000100
 
     ).Build()
