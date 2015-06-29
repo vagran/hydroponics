@@ -408,7 +408,7 @@ adk::PollFunc()
     rotEnc.Poll();
     i2cBus.Poll();
     adc.Poll();
-    //rtc.Poll();
+    rtc.Poll();
     display.Poll();
     textWriter.Poll();
     bitmapWriter.Poll();
@@ -421,7 +421,7 @@ main(void)
     BtnInit();
     PwmInit();
 
-    //rtc.Initialize();
+    rtc.Initialize();
     display.Initialize();
     display.Clear();
     lvlGauge.Enable();

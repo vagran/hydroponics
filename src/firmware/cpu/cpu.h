@@ -24,11 +24,11 @@ SleepEnabled();
 /** Port for rotary encoder line A. */
 #define ROT_ENC_A_PORT   D
 /** Pin for rotary encoder line A. */
-#define ROT_ENC_A_PIN    0
+#define ROT_ENC_A_PIN    1
 /** Port for rotary encoder line B. */
 #define ROT_ENC_B_PORT   D
 /** Pin for rotary encoder line B. */
-#define ROT_ENC_B_PIN    1
+#define ROT_ENC_B_PIN    0
 
 /** Port for level gauge trigger line. */
 #define LVL_GAUGE_TRIG_PORT     D
