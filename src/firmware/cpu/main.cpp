@@ -336,18 +336,30 @@ static inline void
 PwmInit()
 {
     /* Phase correct PWM mode, maximal frequency (~39kHz). */
-    TCCR2A = _BV(WGM20) | _BV(COM2A1) |
-#       if PWM1_INVERSE
-            _BV(COM2A0) |
+    TCCR2A = _BV(WGM20) |
+
+#       if PWM1_ENABLED
+            _BV(COM2A1) |
+#           if PWM1_INVERSE
+                _BV(COM2A0) |
+#           else
+                0 |
+#           endif
 #       else
             0 |
 #       endif
-        _BV(COM2B1) |
-#       if PWM2_INVERSE
-            _BV(COM2B0)
+
+#       if PWM2_ENABLED
+            _BV(COM2B1) |
+#           if PWM2_INVERSE
+                _BV(COM2B0)
+#           else
+                0
+#           endif
 #       else
             0
 #       endif
+
     ;
     TCCR2B = _BV(CS20);
     TIMSK2 = _BV(TOIE2);
@@ -420,6 +432,8 @@ main(void)
 {
     BtnInit();
     PwmInit();
+    DDRB |= 1 << 3;
+    PORTB |= 1 << 3;
 
     rtc.Initialize();
     display.Initialize();

@@ -46,6 +46,8 @@ SleepEnabled();
 #define PWM1_PIN                3
 /** Inverse output for the first PWM channel when TRUE. */
 #define PWM1_INVERSE            FALSE
+/** Whether the first PWM channel is enabled. */
+#define PWM1_ENABLED            0
 
 /** Port for the second PWM channel. */
 #define PWM2_PORT               D
@@ -53,6 +55,8 @@ SleepEnabled();
 #define PWM2_PIN                3
 /** Inverse output for the second PWM channel when TRUE. */
 #define PWM2_INVERSE            FALSE
+/** Whether the second PWM channel is enabled. */
+#define PWM2_ENABLED            1
 
 /** Port for the third (low frequency) PWM channel. */
 #define PWM3_PORT               D
