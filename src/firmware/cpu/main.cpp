@@ -440,6 +440,7 @@ main(void)
 
     led.Initialize();
     rtc.Initialize();
+    sound.Initialize();
     display.Initialize();
     display.Clear();
     lvlGauge.Enable();

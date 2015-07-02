@@ -52,6 +52,14 @@ Rtc::Initialize()
 }
 
 void
+Rtc::SetSound(bool f)
+{
+    AtomicSection as;
+    regs.intcn = !f;
+    writeMask |= 1 << 0x0e;
+}
+
+void
 Rtc::Poll()
 {
     AtomicSection as;
@@ -111,7 +119,10 @@ Rtc::TransferHandler(I2cBus::TransferStatus status, u8 data)
             if (status == I2cBus::TransferStatus::RECEIVE_READY) {
                 /* Do nothing */
             } else if (status == I2cBus::TransferStatus::BYTE_RECEIVED) {
-                reinterpret_cast<u8 *>(&regs)[curAddr] = data;
+                /* Do not overwrite pending write bytes. */
+                if (curAddr >= 0x10 || !(writeMask & (1 << curAddr))) {
+                    reinterpret_cast<u8 *>(&regs)[curAddr] = data;
+                }
                 curAddr++;
                 if (curAddr == 0x12) {
                     i2cBus.Nack();

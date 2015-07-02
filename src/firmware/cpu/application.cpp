@@ -30,6 +30,7 @@ Application::Application()
 void
 Application::Initialize()
 {
+    sound.SetPattern(0xffff, false);
     scheduler.ScheduleTask(_Tick, TASK_DELAY_S(1));
 }
 

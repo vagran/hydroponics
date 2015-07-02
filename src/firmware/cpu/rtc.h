@@ -36,6 +36,13 @@ public:
     Time
     GetTime();
 
+    /** Set sound status.
+     *
+     * @param f True to enable beeping.
+     */
+    void
+    SetSound(bool f);
+
 private:
     /** Image of the chip registers. */
     struct Registers {

@@ -146,6 +146,7 @@ extern Clock clock;
 #include "lighting.h"
 #include "pump.h"
 #include "level_gauge.h"
+#include "sound.h"
 #include "application.h"
 
 #endif /* CPU_H_ */

@@ -35,12 +35,12 @@ Led::_Animator()
 u16
 Led::Animator()
 {
-    patPos++;
     if (pattern & (1 << patPos)) {
         AVR_BIT_SET8(AVR_REG_PORT(LED_PORT), LED_PIN);
     } else {
         AVR_BIT_CLR8(AVR_REG_PORT(LED_PORT), LED_PIN);
     }
+    patPos++;
     return ANIMATION_PERIOD;
 }
 
