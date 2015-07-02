@@ -12,7 +12,7 @@ using namespace adk;
 
 LevelGauge lvlGauge;
 
-u16 EEMEM LevelGauge::eeMinValue, LevelGauge::eeMaxValue;
+u16 EEMEM LevelGauge::eeMinValue = 3920, LevelGauge::eeMaxValue = 15085;
 
 LevelGauge::LevelGauge()
 {

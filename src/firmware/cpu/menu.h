@@ -20,6 +20,16 @@ public:
         VariantFabric fabric;
     } __PACKED;
 
+    /** Selected item handler.
+     *
+     * @param idx Selected item index.
+     * @return True if processed.
+     */
+    typedef bool (*ItemHandler)(u8 idx);
+
+    /** Optional external selection handler. */
+    ItemHandler itemHandler = nullptr;
+
     /** @param items Item strings. Additional null terminator after last item.
      *  @param pos Initially selected item index.
      *  @param actions Default page navigation actions. Size should be equal to

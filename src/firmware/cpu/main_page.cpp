@@ -24,6 +24,9 @@ MainPage::MainPage()
     pumpActive = false;
     drainActive = false;
 
+    flooderStatus = Flooder::Status::IDLE;
+    flooderError = 0;
+
     scheduler.ScheduleTask(_AnimationTask, ANIMATION_PERIOD);
 
     //XXX
@@ -374,9 +377,31 @@ MainPage::_AnimationTask()
         AnimationTask();
 }
 
+void
+MainPage::CheckFlooderStatus()
+{
+    u8 newStatus = flooder.GetStatus();
+    u8 newError = flooder.GetErrorCode();
+    if (newStatus != flooderStatus ||
+        (flooderStatus == Flooder::Status::FAILURE && newError != flooderError)) {
+
+        if (newStatus != Flooder::Status::FAILURE) {
+            SetStatus(flooder.GetStatusString());
+        } else {
+            SetStatus(flooder.GetErrorString());
+            sound.SetPattern(0x0001, true);
+            led.SetMode(Led::Mode::FAILURE);
+        }
+        flooderStatus = newStatus;
+        flooderError = newError;
+    }
+}
+
 u16
 MainPage::AnimationTask()
 {
+    CheckFlooderStatus();
+
     if (statusLen > 18) {
         bool pauseSet = false;
         if (!statusPause) {

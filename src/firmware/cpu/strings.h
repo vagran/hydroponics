@@ -17,9 +17,7 @@
 
 class Strings {
 public:
-    DEF_STR(Test, "*+Iacebdpqghoswyz1234567890")
-    DEF_STR(Test2, "Test string")
-
+    DEF_STR(NoValue, "<no value>")
     DEF_STR(Fine, " Fine ")
     DEF_STR(LightControl, "Light control")
     DEF_STR(PumpControl, "Pump control")
@@ -28,6 +26,15 @@ public:
     DEF_STR(LvlGaugeClbMax, "Level gauge max.")
     DEF_STR(LightSensorA, "Light sensor A")
     DEF_STR(LightSensorB, "Light sensor B")
+    DEF_STR(FloodingPumpThrottle, "Pump throttle")
+
+    DEF_STR(FlooderStatus_Idle, "Idle")
+    DEF_STR(FlooderStatus_Flooding, "Flooding")
+    DEF_STR(FlooderStatus_FloodFinal, "Flooding final run")
+    DEF_STR(FlooderStatus_Draining, "Draining")
+    DEF_STR(FlooderStatus_Failure, "Failure")
+
+    DEF_STR(FlooderError_LowWater, "Too low water for flooding")
 
     /* Menus */
     DEF_STR(MainMenu,
@@ -40,7 +47,8 @@ public:
     DEF_STR(ManualControlMenu,
             "Return\0"
             "Light\0"
-            "Pump\0")
+            "Pump\0"
+            "Start flooding\0")
 
     DEF_STR(CalibrationMenu,
             "Return\0"
@@ -65,6 +73,10 @@ public:
             "Return\0"
             "Min. value\0"
             "Max. value\0")
+
+    DEF_STR(FloodingSetupMenu,
+            "Return\0"
+            "Pump throttle\0")
 
     DEF_STR(TestLongStatus, "This is very very long test status string.")
 } __PACKED;

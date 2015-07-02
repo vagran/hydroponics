@@ -228,6 +228,9 @@ Menu::RequestClose()
 void
 Menu::OnItemSelected(u8 idx)
 {
+    if (itemHandler && itemHandler(idx)) {
+        return;
+    }
     if (!actions) {
         return;
     }

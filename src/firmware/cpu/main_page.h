@@ -103,6 +103,10 @@ private:
     /** Current scrolling offset of long status string. */
        statusOffset;
 
+    u8 flooderStatus:3,
+       flooderError:3,
+       :2;
+
     void
     Draw(u16 mask);
 
@@ -126,6 +130,9 @@ private:
 
     void
     SetStatus(const char *status, bool isPgm);
+
+    void
+    CheckFlooderStatus();
 
     static u16
     _AnimationTask();

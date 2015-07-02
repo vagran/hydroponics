@@ -37,6 +37,13 @@ namespace SetupMenu {
     Fabric(void *p);
 }
 
+namespace FloodingSetupMenu {
+    extern const Menu::Action actions[] PROGMEM;
+
+    void
+    Fabric(void *p);
+}
+
 namespace StatusMenu {
     extern const Menu::Action actions[] PROGMEM;
 

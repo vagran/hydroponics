@@ -54,4 +54,11 @@ namespace ClbLvlGauge_MaxValue {
     Fabric(void *p);
 }
 
+namespace SetupFlooding_PumpThrottle {
+    using TPage = LinearValueSelector;
+
+    void
+    Fabric(void *p);
+};
+
 #endif /* PAGES_H_ */

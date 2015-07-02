@@ -12,7 +12,8 @@
 class Led {
 public:
     enum class Mode {
-        STANDBY
+        STANDBY,
+        FAILURE
     };
 
     Led();
@@ -29,7 +30,8 @@ private:
     };
 
     enum Pattern {
-        STANDBY = 0x0001
+        STANDBY = 0x0001,
+        FAILURE = 0x00ff
     };
 
     /** Current pattern. */

@@ -52,6 +52,9 @@ Led::SetMode(Mode mode)
     case Mode::STANDBY:
         pattern = Pattern::STANDBY;
         break;
+    case Mode::FAILURE:
+        pattern = Pattern::FAILURE;
+        break;
     }
     patPos = 0;
 }

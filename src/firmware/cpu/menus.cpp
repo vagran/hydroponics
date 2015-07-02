@@ -37,13 +37,29 @@ const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
     {Application::GetPageTypeCode<ManCtrl_Light::TPage>(), ManCtrl_Light::Fabric},
     {Application::GetPageTypeCode<ManCtrl_Pump::TPage>(), ManCtrl_Pump::Fabric},
+    {0, nullptr}, /* Start flooding */
     MENU_ACTIONS_END
 };
+
+bool
+CustomActionHandler(u8 idx)
+{
+    switch (idx) {
+    case 3: /* Start flooding */
+        flooder.StartFlooding();
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
 
 void
 Fabric(void *p)
 {
-    new (p) Menu(strings.ManualControlMenu, Menu::returnPos, actions, 0);
+    Menu *menu = new (p) Menu(strings.ManualControlMenu, Menu::returnPos,
+                              actions, 0);
+    menu->itemHandler = CustomActionHandler;
     Menu::returnPos = Menu::FindAction(MainMenu::actions, Fabric);
 }
 
@@ -75,7 +91,7 @@ namespace SetupMenu {
 const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
     {0, nullptr},
-    {0, nullptr},
+    {Application::GetPageTypeCode<Menu>(), FloodingSetupMenu::Fabric},
     {0, nullptr},
     MENU_ACTIONS_END
 };
@@ -88,6 +104,26 @@ Fabric(void *p)
 }
 
 } /* namespace SetupMenu */
+
+
+namespace FloodingSetupMenu {
+
+const Menu::Action actions[] = {
+    {Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_PumpThrottle::TPage>(),
+                                  SetupFlooding_PumpThrottle::Fabric},
+                                  //XXX boost throttle
+    MENU_ACTIONS_END
+};
+
+void
+Fabric(void *p)
+{
+    new (p) Menu(strings.FloodingSetupMenu, Menu::returnPos, actions, 0);
+    Menu::returnPos = Menu::FindAction(SetupMenu::actions, Fabric);
+}
+
+} /* namespace FloodingSetupMenu */
 
 
 namespace StatusMenu {
