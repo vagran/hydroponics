@@ -66,19 +66,6 @@ MainPage::OnRotEncClick(bool dir __UNUSED/*XXX*/)
     }
     Draw(DrawMask::M_PUMP | DrawMask::M_DRAIN | DrawMask::M_BOTTOM_WATER |
          DrawMask::M_TOP_WATER);
-
-    //XXX
-    static char buf[16];
-    Rtc::Time time = rtc.GetTime();
-    utoa(time.hour, buf, 10);
-    u8 len = strlen(buf);
-    buf[len] = ':';
-    utoa(time.min, &buf[len + 1], 10);
-    len = strlen(buf);
-    buf[len] = ':';
-    utoa(time.sec, &buf[len + 1], 10);
-    SetStatus(buf);
-    rtc.Update();
 }
 
 void
@@ -218,13 +205,13 @@ MainPage::IssueDrawRequest()
 
        case DrawState::STATUS:
             if (!(drawMask & DrawMask::M_STATUS)) {
-                drawState = DrawState::DONE;
+                drawState = DrawState::CLOCK;
                 break;
             }
             drawMask &= ~DrawMask::M_STATUS;
             if (!status) {
                 display.Clear(Display::Viewport{0, 127, 7, 7});
-                drawState = DrawState::DONE;
+                drawState = DrawState::CLOCK;
                 break;
             }
             if (isStatusPgm) {
@@ -237,6 +224,18 @@ MainPage::IssueDrawRequest()
                                  true, _DrawHandler);
             }
             return;
+
+       case DrawState::CLOCK:
+           if (!(drawMask & DrawMask::M_CLOCK)) {
+               drawState = DrawState::DONE;
+               break;
+           }
+           drawMask &= ~DrawMask::M_CLOCK;
+           GetClockText();
+           textWriter.Write(Display::Viewport{0, 127, 0, 0},
+                            textBuf, false, true, _DrawHandler);
+           return;
+
         default:
             break;
         }
@@ -395,8 +394,6 @@ MainPage::CheckFlooderStatus()
         flooderError = newError;
     }
 
-    AtomicSection as;
-
     if (newStatus != Flooder::Status::FLOODING &&
         newStatus != Flooder::Status::FLOOD_FINAL) {
 
@@ -439,7 +436,10 @@ MainPage::CheckFlooderStatus()
 u16
 MainPage::AnimationTask()
 {
+    AtomicSection as;
     CheckFlooderStatus();
+    rtc.Update();
+    drawMask |= DrawMask::M_CLOCK;
 
     if (statusLen > 18) {
         bool pauseSet = false;
@@ -467,4 +467,28 @@ MainPage::AnimationTask()
         }
     }
     return ANIMATION_PERIOD;
+}
+
+void
+MainPage::ClockUtoa(u8 num, char *buf)
+{
+    u8 dec = num / 10;
+    num -= dec * 10;
+    if (dec > 9) {
+        dec = 9;
+    }
+    buf[0] = '0' + dec;
+    buf[1] = '0' + num;
+}
+
+void
+MainPage::GetClockText()
+{
+    Rtc::Time time = rtc.GetTime();
+    ClockUtoa(time.hour, textBuf);
+    textBuf[2] = ':';
+    ClockUtoa(time.min, textBuf + 3);
+    textBuf[5] = ':';
+    ClockUtoa(time.sec, textBuf + 6);
+    textBuf[8] = 0;
 }

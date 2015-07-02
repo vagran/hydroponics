@@ -66,6 +66,7 @@ private:
         TOP_WATER,
         BOTTOM_WATER,
         STATUS,
+        CLOCK,
         DONE
     };
 
@@ -76,9 +77,10 @@ private:
         M_TOP_WATER =       0x0008,
         M_BOTTOM_WATER =    0x0010,
         M_STATUS =          0x0020,
+        M_CLOCK =           0x0040,
 
         M_ALL = M_STATIC | M_PUMP | M_DRAIN | M_TOP_WATER | M_BOTTOM_WATER |
-                M_STATUS
+                M_STATUS | M_CLOCK
     };
 
     u8 drawState:5,
@@ -106,6 +108,8 @@ private:
     u8 flooderStatus:3,
        flooderError:3,
        :2;
+
+    char textBuf[18];
 
     void
     Draw(u16 mask);
@@ -139,6 +143,13 @@ private:
 
     u16
     AnimationTask();
+
+    void
+    GetClockText();
+
+    /** Convert clock number to characters. */
+    static void
+    ClockUtoa(u8 num, char *buf);
 
 } __PACKED;
 
