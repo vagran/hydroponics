@@ -15,7 +15,7 @@
 class LinearValueSelector: public Page {
 public:
     enum {
-        PRINTER_BUF_SIZE = 16
+        PRINTER_BUF_SIZE = 18
     };
 
     /** Callback for converting value to string representation.

@@ -15,11 +15,12 @@ SleepEnabled();
 
 #include <adk.h>
 
-//XXX revise
+
 /** Port for button. */
 #define BUTTON_PORT   D
 /** Pin for button. */
 #define BUTTON_PIN    2
+
 
 /** Port for rotary encoder line A. */
 #define ROT_ENC_A_PORT   D
@@ -30,6 +31,7 @@ SleepEnabled();
 /** Pin for rotary encoder line B. */
 #define ROT_ENC_B_PIN    0
 
+
 /** Port for level gauge trigger line. */
 #define LVL_GAUGE_TRIG_PORT     D
 /** Pin for level gauge trigger line. */
@@ -39,6 +41,11 @@ SleepEnabled();
 /** Pin for level gauge echo line. */
 #define LVL_GAUGE_ECHO_PIN      0
 
+
+/** Port for debugging LED. */
+#define LED_PORT                B
+/** Pin for debugging LED. */
+#define LED_PIN                 3
 
 /** Port for the first PWM channel. */
 #define PWM1_PORT               B
@@ -128,6 +135,7 @@ extern Clock clock;
 #include "variant.h"
 
 #include "strings.h"
+#include "led.h"
 #include "i2c.h"
 #include "adc.h"
 #include "rtc.h"

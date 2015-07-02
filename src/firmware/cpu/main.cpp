@@ -432,9 +432,13 @@ main(void)
 {
     BtnInit();
     PwmInit();
-    DDRB |= 1 << 3;
-    PORTB |= 1 << 3;
 
+    //XXX light sensor A
+    DDRD |= 1 << 5;
+    //XXX light sensor B
+    DDRB |= 1 << 2;
+
+    led.Initialize();
     rtc.Initialize();
     display.Initialize();
     display.Clear();

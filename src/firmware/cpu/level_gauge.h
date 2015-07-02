@@ -60,6 +60,9 @@ public:
         maxValue = v;
     }
 
+    void
+    SaveSettings();
+
     /** Enable periodic measurements. */
     void
     Enable();
@@ -89,6 +92,8 @@ private:
         reserved:9;
     u16 echoStartTime;
     u16 minValue = 0, maxValue = 0xffff;
+
+    static u16 EEMEM eeMinValue, eeMaxValue;
 
     static u16
     _PeriodicTask();

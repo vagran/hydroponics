@@ -68,6 +68,11 @@ LinearValueSelector::Print(u16 value, char *buf)
         printer(value, buf);
     } else {
         utoa(value, buf, 10);
+        if (hintSet) {
+            strcat(buf, " / ");
+            u8 pos = strlen(buf);
+            utoa(hintValue, buf + pos, 10);
+        }
     }
 }
 

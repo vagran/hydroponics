@@ -149,6 +149,7 @@ void
 OnClosed(u16)
 {
     lvlGauge.SetMinValue(static_cast<TPage *>(app.CurPage())->GetValue());
+    lvlGauge.SaveSettings();
     app.SetNextPage(Application::GetPageTypeCode<Menu>(),
                     LvlGaugeCalibrationMenu::Fabric);
 }
@@ -172,6 +173,7 @@ void
 OnClosed(u16)
 {
     lvlGauge.SetMaxValue(static_cast<TPage *>(app.CurPage())->GetValue());
+    lvlGauge.SaveSettings();
     app.SetNextPage(Application::GetPageTypeCode<Menu>(),
                     LvlGaugeCalibrationMenu::Fabric);
 }

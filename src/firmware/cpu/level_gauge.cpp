@@ -12,8 +12,12 @@ using namespace adk;
 
 LevelGauge lvlGauge;
 
+u16 EEMEM LevelGauge::eeMinValue, LevelGauge::eeMaxValue;
+
 LevelGauge::LevelGauge()
 {
+    minValue = eeprom_read_word(&eeMinValue);
+    maxValue = eeprom_read_word(&eeMaxValue);
     enabled = false;
     accResult = 0;
     /* Running at system clock frequency, normal mode. Input capture for falling
@@ -32,6 +36,13 @@ LevelGauge::LevelGauge()
     _delay_ms(10);
     /* Wait for echo end. */
     while (AVR_BIT_GET8(AVR_REG_PIN(LVL_GAUGE_ECHO_PORT), LVL_GAUGE_ECHO_PIN));
+}
+
+void
+LevelGauge::SaveSettings()
+{
+    eeprom_update_word(&eeMinValue, minValue);
+    eeprom_update_word(&eeMaxValue, maxValue);
 }
 
 void
