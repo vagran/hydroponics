@@ -61,6 +61,10 @@ public:
     static void
     SetPumpBoostThrottle(u8 value);
 
+    /** Get heuristically calculated water level in the top pot. 255 is 100%. */
+    u8
+    GetTopPotWaterLevel();
+
 private:
     enum {
         /** Minimal water level to start flooding, in percents. */
@@ -72,11 +76,11 @@ private:
        errorCode:3,
        :2;
     /** Water level when cycle started. */
-    u8 startLevel;
+    u8 startLevel = 0;
     /** Water level on most recent gauge reading. */
     u8 lastWaterLevel;
     /** Water level when siphon reached. */
-    u8 siphonLevel;
+    u8 siphonLevel = 0;
 
     /** Throttle value to use when pump is on. */
     static u8 EEMEM eePumpThrottle,

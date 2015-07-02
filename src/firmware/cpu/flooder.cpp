@@ -102,13 +102,14 @@ Flooder::FloodPoll()
             pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
         }
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel > siphonLevel + 0x10) {
+        if (newLevel > siphonLevel + 0x20) {
             status = Status::DRAINING;
             pump.SetLevel(0);
         }
     } else if (status == Status::DRAINING) {
         if (newLevel > startLevel - 0x20) {
             status = Status::IDLE;
+            lastWaterLevel = newLevel;
             return 0;
         }
     } else {
@@ -122,4 +123,18 @@ u16
 Flooder::_FloodPoll()
 {
     return flooder.FloodPoll();
+}
+
+u8
+Flooder::GetTopPotWaterLevel()
+{
+    if (startLevel == 0) {
+        return 0;
+    }
+    if (siphonLevel == 0) {
+        return 0xff - lastWaterLevel;
+    }
+    return 0xff -
+        static_cast<u16>(lastWaterLevel - siphonLevel) * 0xff /
+        (startLevel - siphonLevel);
 }

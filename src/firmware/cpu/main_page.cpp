@@ -29,7 +29,6 @@ MainPage::MainPage()
 
     scheduler.ScheduleTask(_AnimationTask, ANIMATION_PERIOD);
 
-    //XXX
     watLevelBottom = MAX_WATER_LEVEL;
     watLevelTop = 0;
 
@@ -394,6 +393,46 @@ MainPage::CheckFlooderStatus()
         }
         flooderStatus = newStatus;
         flooderError = newError;
+    }
+
+    AtomicSection as;
+
+    if (newStatus != Flooder::Status::FLOODING &&
+        newStatus != Flooder::Status::FLOOD_FINAL) {
+
+        if (pumpActive) {
+            pumpActive = false;
+            drawMask |= DrawMask::M_PUMP;
+        }
+    } else {
+        pumpActive = !pumpActive;
+        drawMask |= DrawMask::M_PUMP;
+    }
+
+    if (newStatus != Flooder::Status::DRAINING &&
+        newStatus != Flooder::Status::FLOOD_FINAL) {
+
+        if (drainActive) {
+            drainActive = false;
+            drawMask |= DrawMask::M_DRAIN;
+        }
+    } else {
+        drainActive = !drainActive;
+        drawMask |= DrawMask::M_DRAIN;
+    }
+
+    u8 level = lvlGauge.GetValue();
+    level = static_cast<u16>(level) * MAX_WATER_LEVEL / 0xff;
+    if (level != watLevelBottom) {
+        watLevelBottom = level;
+        drawMask |= DrawMask::M_BOTTOM_WATER;
+    }
+
+    level = flooder.GetTopPotWaterLevel();
+    level = static_cast<u16>(level) * MAX_WATER_LEVEL / 0xff;
+    if (level != watLevelTop) {
+        watLevelTop = level;
+        drawMask |= DrawMask::M_TOP_WATER;
     }
 }
 
