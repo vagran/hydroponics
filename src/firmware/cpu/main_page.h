@@ -60,6 +60,7 @@ private:
         POT_WALLS_5,
         POT_WALLS_PUMP1,
         POT_WALLS_PUMP2,
+        TEMP_ICON,
 
         PUMP,
         DRAIN,
@@ -67,6 +68,7 @@ private:
         BOTTOM_WATER,
         STATUS,
         CLOCK,
+        TEMPERATURE,
         DONE
     };
 
@@ -78,9 +80,10 @@ private:
         M_BOTTOM_WATER =    0x0010,
         M_STATUS =          0x0020,
         M_CLOCK =           0x0040,
+        M_TEMPERATURE =     0x0080,
 
         M_ALL = M_STATIC | M_PUMP | M_DRAIN | M_TOP_WATER | M_BOTTOM_WATER |
-                M_STATUS | M_CLOCK
+                M_STATUS | M_CLOCK | M_TEMPERATURE
     };
 
     u8 drawState:5,
@@ -104,6 +107,9 @@ private:
     u8 statusLen = 0,
     /** Current scrolling offset of long status string. */
        statusOffset;
+
+    /** Used to divide animation frequency, continuously incremented. */
+    u8 animationDivider;
 
     u8 flooderStatus:3,
        flooderError:3,
@@ -146,6 +152,9 @@ private:
 
     void
     GetClockText();
+
+    void
+    GetTemperatureText();
 
     /** Convert clock number to characters. */
     static void

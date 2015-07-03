@@ -84,8 +84,8 @@ TextWriter::OutputHandler(u8 column, u8 page, u8 *data)
             break;
         }
         if (curCharCol < FONT_WIDTH) {
-            if (curChar >= 0x20 && !req.clear) {
-                _data = pgm_read_byte(&fontData[curChar - 0x20][curCharCol]);
+            if (curChar >= 0x10 && !req.clear) {
+                _data = pgm_read_byte(&fontData[curChar - 0x10][curCharCol]);
             } else {
                 _data = 0;
             }

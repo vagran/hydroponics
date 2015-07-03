@@ -30,7 +30,7 @@ Rtc::Initialize()
     /* 4kHz */
     regs.rs1 = 1;
     regs.rs2 = 0;
-    regs.conv = false;
+    regs.conv = 1;
     regs.bbsqw = false;
     regs.eosc = false;
 
@@ -57,6 +57,13 @@ Rtc::SetSound(bool f)
     AtomicSection as;
     regs.intcn = !f;
     writeMask |= 1 << 0x0e;
+}
+
+i16
+Rtc::GetTemperature()
+{
+    AtomicSection as;
+    return (static_cast<i16>(regs.temp_hi) << 2) | regs.temp_lo;
 }
 
 void

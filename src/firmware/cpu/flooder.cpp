@@ -12,7 +12,7 @@ using namespace adk;
 
 Flooder flooder;
 
-u8 EEMEM Flooder::eePumpThrottle = 80,
+u8 EEMEM Flooder::eePumpThrottle = 70,
          Flooder::eePumpBoostThrottle = 120;
 
 Flooder::Flooder()
@@ -102,7 +102,7 @@ Flooder::FloodPoll()
             pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
         }
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel > siphonLevel + 0x20) {
+        if (newLevel > siphonLevel + 0x18) {
             status = Status::DRAINING;
             pump.SetLevel(0);
         }

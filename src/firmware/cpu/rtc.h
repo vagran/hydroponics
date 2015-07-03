@@ -43,6 +43,10 @@ public:
     void
     SetSound(bool f);
 
+    /** Current temperature reading, fixed point, two LSB - fractional part. */
+    i16
+    GetTemperature();
+
 private:
     /** Image of the chip registers. */
     struct Registers {

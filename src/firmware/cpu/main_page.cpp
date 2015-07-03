@@ -155,6 +155,11 @@ MainPage::IssueDrawRequest()
                                _DrawHandler);
             return;
 
+        case DrawState::TEMP_ICON:
+            bitmapWriter.Write(0, 1, &bitmaps.Thermometer, false,
+                               _DrawHandler);
+            return;
+
         case DrawState::PUMP:
             if (!(drawMask & DrawMask::M_PUMP)) {
                 drawState = DrawState::DRAIN;
@@ -227,7 +232,7 @@ MainPage::IssueDrawRequest()
 
        case DrawState::CLOCK:
            if (!(drawMask & DrawMask::M_CLOCK)) {
-               drawState = DrawState::DONE;
+               drawState = DrawState::TEMPERATURE;
                break;
            }
            drawMask &= ~DrawMask::M_CLOCK;
@@ -235,6 +240,17 @@ MainPage::IssueDrawRequest()
            textWriter.Write(Display::Viewport{0, 127, 0, 0},
                             textBuf, false, true, _DrawHandler);
            return;
+
+       case DrawState::TEMPERATURE:
+          if (!(drawMask & DrawMask::M_TEMPERATURE)) {
+              drawState = DrawState::DONE;
+              break;
+          }
+          drawMask &= ~DrawMask::M_TEMPERATURE;
+          GetTemperatureText();
+          textWriter.Write(Display::Viewport{7, POT_COL - 2, 1, 1},
+                           textBuf, false, true, _DrawHandler);
+          return;
 
         default:
             break;
@@ -437,9 +453,16 @@ u16
 MainPage::AnimationTask()
 {
     AtomicSection as;
+    animationDivider++;
+
     CheckFlooderStatus();
     rtc.Update();
+
     drawMask |= DrawMask::M_CLOCK;
+
+    if ((animationDivider & 31) == 0) {
+        drawMask |= DrawMask::M_TEMPERATURE;
+    }
 
     if (statusLen > 18) {
         bool pauseSet = false;
@@ -491,4 +514,18 @@ MainPage::GetClockText()
     textBuf[5] = ':';
     ClockUtoa(time.sec, textBuf + 6);
     textBuf[8] = 0;
+}
+
+void
+MainPage::GetTemperatureText()
+{
+    i16 temp = rtc.GetTemperature();
+    itoa(temp >> 2, textBuf, 10);
+    u8 len = strlen(textBuf);
+    textBuf[len] = '.';
+    u8 frac = temp & 3;
+    textBuf[len + 1] = '0' + ((10 * frac + 2) >> 2);
+    textBuf[len + 2] = 0x10;
+    textBuf[len + 3] = 'C';
+    textBuf[len + 4] = 0;
 }
