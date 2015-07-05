@@ -68,4 +68,11 @@ namespace SetupFlooding_PumpBoostThrottle {
     Fabric(void *p);
 };
 
+namespace SetupTime {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
 #endif /* PAGES_H_ */

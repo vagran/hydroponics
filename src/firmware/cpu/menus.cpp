@@ -90,7 +90,7 @@ namespace SetupMenu {
 
 const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), MainMenu::Fabric},
-    {0, nullptr},
+    {Application::GetPageTypeCode<SetupTime::TPage>(), SetupTime::Fabric},
     {Application::GetPageTypeCode<Menu>(), FloodingSetupMenu::Fabric},
     {0, nullptr},
     MENU_ACTIONS_END

@@ -1,4 +1,12 @@
+/* This file is a part of 'hydroponics' project.
+ * Copyright (c) 2012-2015, Artyom Lebedev <artyom.lebedev@gmail.com>
+ * All rights reserved.
+ * See COPYING file for copyright details.
+ */
 
+/** @file font.h
+ * Font data definition.
+ */
 
 static const unsigned char fontData[96 + 16][6] PROGMEM = {
     /* 16 custom characters. */

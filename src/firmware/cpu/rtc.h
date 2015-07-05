@@ -36,6 +36,9 @@ public:
     Time
     GetTime();
 
+    void
+    SetTime(Time time);
+
     /** Set sound status.
      *
      * @param f True to enable beeping.

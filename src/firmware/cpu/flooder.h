@@ -4,9 +4,7 @@
  * See COPYING file for copyright details.
  */
 
-/** @file flooder.h
- * TODO insert description here.
- */
+/** @file flooder.h */
 
 #ifndef FLOODER_H_
 #define FLOODER_H_

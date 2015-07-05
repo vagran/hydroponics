@@ -11,6 +11,10 @@
 #ifndef TEXT_WRITER_H_
 #define TEXT_WRITER_H_
 
+enum {
+    FONT_WIDTH = 6
+};
+
 /** Helper class for text output to graphical display. */
 class TextWriter {
 public:
@@ -61,7 +65,6 @@ public:
 private:
     enum {
         MAX_REQUESTS = 8,
-        FONT_WIDTH = 6,
         /** Width in pixels of space between characters in a word. */
         CHAR_SPACE_WIDTH = 1
     };

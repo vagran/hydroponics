@@ -156,10 +156,6 @@ private:
     void
     GetTemperatureText();
 
-    /** Convert clock number to characters. */
-    static void
-    ClockUtoa(u8 num, char *buf);
-
 } __PACKED;
 
 #endif /* MAIN_PAGE_H_ */

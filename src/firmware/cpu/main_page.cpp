@@ -493,27 +493,14 @@ MainPage::AnimationTask()
 }
 
 void
-MainPage::ClockUtoa(u8 num, char *buf)
-{
-    u8 dec = num / 10;
-    num -= dec * 10;
-    if (dec > 9) {
-        dec = 9;
-    }
-    buf[0] = '0' + dec;
-    buf[1] = '0' + num;
-}
-
-void
 MainPage::GetClockText()
 {
     Rtc::Time time = rtc.GetTime();
-    ClockUtoa(time.hour, textBuf);
+    Strings::StrClockNum(time.hour, textBuf);
     textBuf[2] = ':';
-    ClockUtoa(time.min, textBuf + 3);
+    Strings::StrClockNum(time.min, textBuf + 3);
     textBuf[5] = ':';
-    ClockUtoa(time.sec, textBuf + 6);
-    textBuf[8] = 0;
+    Strings::StrClockNum(time.sec, textBuf + 6);
 }
 
 void

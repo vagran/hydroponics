@@ -195,6 +195,40 @@ Rtc::GetTime()
 }
 
 void
+Rtc::SetTime(Time time)
+{
+    AtomicSection as;
+    u8 hour = time.hour;
+    if (hour >= 20) {
+        regs.hour_20_ampm = 1;
+        regs.hour_10 = 0;
+        hour -= 20;
+    } else {
+        regs.hour_20_ampm = 0;
+        if (hour >= 10) {
+            regs.hour_10 = 1;
+            hour -= 10;
+        } else {
+            regs.hour_10 = 0;
+        }
+    }
+    regs.hour_lo = hour;
+    regs._12_24 = 0;
+
+    u8 min = time.min;
+    regs.min_hi = min / 10;
+    min -= regs.min_hi * 10;
+    regs.min_lo = min;
+
+    u8 sec = time.sec;
+    regs.sec_hi = sec / 10;
+    sec -= regs.sec_hi * 10;
+    regs.sec_lo = sec;
+
+    writeMask |= (1 << 0x00) | (1 << 0x01) | (1 << 0x02);
+}
+
+void
 Rtc::Update()
 {
     AtomicSection as;

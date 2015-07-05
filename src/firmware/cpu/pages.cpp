@@ -212,6 +212,7 @@ Fabric(void *p)
 
 } /* namespace SetupFlooding_PumpThrottle */
 
+
 namespace SetupFlooding_PumpBoostThrottle {
 
 void
@@ -232,3 +233,29 @@ Fabric(void *p)
 }
 
 } /* namespace SetupFlooding_PumpThrottle */
+
+
+namespace SetupTime {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        TimeSelector::Time time =
+            static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        rtc.SetTime(Rtc::Time{time.hour, time.min, 0});
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    Rtc::Time curTime = rtc.GetTime();
+    TPage *sel = new (p) TPage(strings.TimeSetup,
+                               TimeSelector::Time{curTime.hour, curTime.min});
+    Menu::returnPos = Menu::FindAction(SetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupTime */

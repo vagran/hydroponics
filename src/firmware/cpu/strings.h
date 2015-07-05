@@ -17,7 +17,15 @@
 
 class Strings {
 public:
+    /** Convert number to string. Applicable to time number only (two digits,
+     * 0-59 range).
+     */
+    static void
+    StrClockNum(u8 value, char *buf);
+
     DEF_STR(NoValue, "<no value>")
+    DEF_STR(OK, "OK")
+    DEF_STR(Cancel, "Cancel")
     DEF_STR(Fine, " Fine ")
     DEF_STR(LightControl, "Light control")
     DEF_STR(PumpControl, "Pump control")
@@ -28,6 +36,7 @@ public:
     DEF_STR(LightSensorB, "Light sensor B")
     DEF_STR(FloodingPumpThrottle, "Pump throttle")
     DEF_STR(FloodingPumpBoostThrottle, "Pump boost throttle")
+    DEF_STR(TimeSetup, "Setup time")
 
     DEF_STR(FlooderStatus_Idle, "Idle")
     DEF_STR(FlooderStatus_Flooding, "Flooding")
