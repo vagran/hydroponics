@@ -27,6 +27,7 @@ public:
     DEF_STR(LightSensorA, "Light sensor A")
     DEF_STR(LightSensorB, "Light sensor B")
     DEF_STR(FloodingPumpThrottle, "Pump throttle")
+    DEF_STR(FloodingPumpBoostThrottle, "Pump boost throttle")
 
     DEF_STR(FlooderStatus_Idle, "Idle")
     DEF_STR(FlooderStatus_Flooding, "Flooding")
@@ -76,7 +77,8 @@ public:
 
     DEF_STR(FloodingSetupMenu,
             "Return\0"
-            "Pump throttle\0")
+            "Pump throttle\0"
+            "Pump boost throttle\0")
 
     DEF_STR(TestLongStatus, "This is very very long test status string.")
 } __PACKED;

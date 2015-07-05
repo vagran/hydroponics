@@ -61,4 +61,11 @@ namespace SetupFlooding_PumpThrottle {
     Fabric(void *p);
 };
 
+namespace SetupFlooding_PumpBoostThrottle {
+    using TPage = LinearValueSelector;
+
+    void
+    Fabric(void *p);
+};
+
 #endif /* PAGES_H_ */

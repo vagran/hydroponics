@@ -206,7 +206,28 @@ Fabric(void *p)
 {
     TPage *sel = new (p) TPage(strings.FloodingPumpThrottle,
                                flooder.GetPumpThrottle(), 0, 0xff);
-    Menu::returnPos = Menu::FindAction(LvlGaugeCalibrationMenu::actions, Fabric);
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_PumpThrottle */
+
+namespace SetupFlooding_PumpBoostThrottle {
+
+void
+OnClosed(u16)
+{
+    flooder.SetPumpBoostThrottle(static_cast<TPage *>(app.CurPage())->GetValue());
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    FloodingSetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingPumpBoostThrottle,
+                               flooder.GetPumpBoostThrottle(), 0, 0xff);
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
     sel->onClosed = OnClosed;
 }
 

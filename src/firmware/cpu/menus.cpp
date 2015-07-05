@@ -112,7 +112,8 @@ const Menu::Action actions[] = {
     {Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric},
     {Application::GetPageTypeCode<SetupFlooding_PumpThrottle::TPage>(),
                                   SetupFlooding_PumpThrottle::Fabric},
-                                  //XXX boost throttle
+    {Application::GetPageTypeCode<SetupFlooding_PumpBoostThrottle::TPage>(),
+                                  SetupFlooding_PumpBoostThrottle::Fabric},
     MENU_ACTIONS_END
 };
 
