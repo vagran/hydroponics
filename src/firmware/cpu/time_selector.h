@@ -13,10 +13,6 @@
 
 class TimeSelector: public Page {
 public:
-    struct Time {
-        u8 hour, min;
-    } __PACKED;
-
     /** Handler for page closing. */
     typedef void (*CloseHandler)(bool accepted);
 

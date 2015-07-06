@@ -87,7 +87,12 @@ public:
     DEF_STR(FloodingSetupMenu,
             "Return\0"
             "Pump throttle\0"
-            "Pump boost throttle\0")
+            "Pump boost throttle\0"
+            "Min. sunrise time\0"
+            "First flood delay\0"
+            "Flood duration\0"
+            "Flood period\0"
+            "Max. sunset time\0")
 
     DEF_STR(TestLongStatus, "This is very very long test status string.")
 } __PACKED;

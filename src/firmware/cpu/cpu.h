@@ -132,6 +132,11 @@ extern Clock clock;
 #define TASK_DELAY_S(__s) \
     ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
+/** Time representation. */
+struct Time {
+    u8 hour, min;
+} __PACKED;
+
 #include "variant.h"
 
 #include "strings.h"

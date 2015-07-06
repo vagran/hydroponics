@@ -14,10 +14,85 @@ Flooder flooder;
 
 u8 EEMEM Flooder::eePumpThrottle = 70,
          Flooder::eePumpBoostThrottle = 120;
+Time EEMEM Flooder::eeMinSunriseTime {7, 0},
+           Flooder::eeFirstFloodDelay{0, 30},
+           Flooder::eeFloodDuration{0, 1},
+           Flooder::eeFloodPeriod{24, 0},
+           Flooder::eeMaxSunsetTime{22, 0};
 
 Flooder::Flooder()
 {
     status = Status::IDLE;
+}
+
+Time
+Flooder::GetMinSunriseTime()
+{
+    Time t;
+    eeprom_read_block(&t, &eeMinSunriseTime, sizeof(t));
+    return t;
+}
+
+void
+Flooder::SetMinSunriseTime(Time t)
+{
+    eeprom_update_block(&t, &eeMinSunriseTime, sizeof(t));
+}
+
+Time
+Flooder::GetFirstFloodDelay()
+{
+    Time t;
+    eeprom_read_block(&t, &eeFirstFloodDelay, sizeof(t));
+    return t;
+}
+
+void
+Flooder::SetFirstFloodDelay(Time t)
+{
+    eeprom_update_block(&t, &eeFirstFloodDelay, sizeof(t));
+}
+
+Time
+Flooder::GetFloodDuration()
+{
+    Time t;
+    eeprom_read_block(&t, &eeFloodDuration, sizeof(t));
+    return t;
+}
+
+void
+Flooder::SetFloodDuration(Time t)
+{
+    eeprom_update_block(&t, &eeFloodDuration, sizeof(t));
+}
+
+Time
+Flooder::GetFloodPeriod()
+{
+    Time t;
+    eeprom_read_block(&t, &eeFloodPeriod, sizeof(t));
+    return t;
+}
+
+void
+Flooder::SetFloodPeriod(Time t)
+{
+    eeprom_update_block(&t, &eeFloodPeriod, sizeof(t));
+}
+
+Time
+Flooder::GetMaxSunsetTime()
+{
+    Time t;
+    eeprom_read_block(&t, &eeMaxSunsetTime, sizeof(t));
+    return t;
+}
+
+void
+Flooder::SetMaxSunsetTime(Time t)
+{
+    eeprom_update_block(&t, &eeMaxSunsetTime, sizeof(t));
 }
 
 const char *

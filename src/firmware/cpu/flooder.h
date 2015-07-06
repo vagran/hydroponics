@@ -63,6 +63,36 @@ public:
     u8
     GetTopPotWaterLevel();
 
+    Time
+    GetMinSunriseTime();
+
+    void
+    SetMinSunriseTime(Time t);
+
+    Time
+    GetFirstFloodDelay();
+
+    void
+    SetFirstFloodDelay(Time t);
+
+    Time
+    GetFloodDuration();
+
+    void
+    SetFloodDuration(Time t);
+
+    Time
+    GetFloodPeriod();
+
+    void
+    SetFloodPeriod(Time t);
+
+    Time
+    GetMaxSunsetTime();
+
+    void
+    SetMaxSunsetTime(Time t);
+
 private:
     enum {
         /** Minimal water level to start flooding, in percents. */
@@ -84,6 +114,11 @@ private:
     static u8 EEMEM eePumpThrottle,
     /** Throttle value to use when pump is boosted on final run. */
                     eePumpBoostThrottle;
+    static Time EEMEM eeMinSunriseTime,
+                      eeFirstFloodDelay,
+                      eeFloodDuration,
+                      eeFloodPeriod,
+                      eeMaxSunsetTime;
 
     static u16
     _FloodPoll();
