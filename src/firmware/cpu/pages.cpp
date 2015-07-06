@@ -244,7 +244,8 @@ OnClosed(bool accepted)
         Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
         flooder.SetMinSunriseTime(time);
     }
-    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    FloodingSetupMenu::Fabric);
 }
 
 void
@@ -268,7 +269,8 @@ OnClosed(bool accepted)
         Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
         flooder.SetFirstFloodDelay(time);
     }
-    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    FloodingSetupMenu::Fabric);
 }
 
 void
@@ -292,7 +294,8 @@ OnClosed(bool accepted)
         Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
         flooder.SetFloodDuration(time);
     }
-    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), \
+                    FloodingSetupMenu::Fabric);
 }
 
 void
@@ -316,7 +319,8 @@ OnClosed(bool accepted)
         Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
         flooder.SetFloodPeriod(time);
     }
-    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    FloodingSetupMenu::Fabric);
 }
 
 void
@@ -340,7 +344,8 @@ OnClosed(bool accepted)
         Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
         flooder.SetMaxSunsetTime(time);
     }
-    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(),
+                    FloodingSetupMenu::Fabric);
 }
 
 void
