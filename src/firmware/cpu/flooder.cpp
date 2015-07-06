@@ -110,6 +110,8 @@ Flooder::GetStatusString()
         return strings.FlooderStatus_Idle;
     case Status::FLOODING:
         return strings.FlooderStatus_Flooding;
+    case Status::FLOOD_WAIT:
+        return strings.FlooderStatus_FloodWait;
     case Status::FLOOD_FINAL:
         return strings.FlooderStatus_FloodFinal;
     case Status::DRAINING:
@@ -138,7 +140,10 @@ Flooder::StartFlooding()
         return;
     }
     lastWaterLevel = lvlGauge.GetValue();
-    if (lastWaterLevel < static_cast<u16>(MIN_START_WATER) * 255 / 100) {
+    if ((lastTopVolume == 0 &&
+         lastWaterLevel < static_cast<u16>(MIN_START_WATER) * 255 / 100) ||
+        (lastTopVolume != 0 && lastWaterLevel < lastTopVolume + 0x10)) {
+
         status = Status::FAILURE;
         errorCode = ErrorCode::LOW_WATER;
         return;
@@ -180,8 +185,21 @@ Flooder::FloodPoll()
     if (status == Status::FLOODING) {
         if (newLevel < 0x80 && newLevel >= lastWaterLevel) {
             siphonLevel = lastWaterLevel;
-            status = Status::FLOOD_FINAL;
-            pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+            lastTopVolume = startLevel - siphonLevel;
+            status = Status::FLOOD_WAIT;
+            pump.SetLevel(0);
+            floodDelayTime = rtc.GetTime().GetTime();
+        }
+    } else if (status == Status::FLOOD_WAIT) {
+        if (newLevel > siphonLevel + 0x18) {
+            status = Status::DRAINING;
+        } else {
+            Time curTime = rtc.GetTime().GetTime();
+            Time delay = GetFloodDuration();
+            if (curTime >= floodDelayTime + delay) {
+                status = Status::FLOOD_FINAL;
+                pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+            }
         }
     } else if (status == Status::FLOOD_FINAL) {
         if (newLevel > siphonLevel + 0x18) {
@@ -249,10 +267,14 @@ Flooder::GetTopPotWaterLevel()
     if (startLevel == 0) {
         return 0;
     }
-    if (siphonLevel == 0) {
+    if (lastTopVolume == 0) {
         return 0xff - lastWaterLevel;
     }
-    return 0xff -
-        static_cast<u16>(lastWaterLevel - siphonLevel) * 0xff /
-        (startLevel - siphonLevel);
+    u16 inv =
+        static_cast<u16>(lastWaterLevel - (startLevel - lastTopVolume)) * 0xff /
+        lastTopVolume;
+    if (inv >= 0xff) {
+        return 0;
+    }
+    return 0xff - inv;
 }

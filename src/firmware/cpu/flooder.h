@@ -14,6 +14,7 @@ public:
     enum Status {
         IDLE,
         FLOODING,
+        FLOOD_WAIT,
         FLOOD_FINAL,
         DRAINING,
         FAILURE
@@ -115,8 +116,11 @@ private:
     u8 lastWaterLevel;
     /** Water level when siphon reached. */
     u8 siphonLevel = 0;
+    /** Last volume counted for top pot flooding. */
+    u8 lastTopVolume = 0;
 
-    Time lastSunriseTime{0, 0}, lastSunsetTime{0, 0}, lastFloodTime {0, 0};
+    Time lastSunriseTime{0, 0}, lastSunsetTime{0, 0}, lastFloodTime {0, 0},
+         floodDelayTime;
 
     /** Throttle value to use when pump is on. */
     static u8 EEMEM eePumpThrottle,

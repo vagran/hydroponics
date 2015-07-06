@@ -46,26 +46,6 @@ void
 MainPage::OnRotEncClick(bool dir __UNUSED/*XXX*/)
 {
     //XXX
-    AtomicSection as;
-    pumpActive = !pumpActive;
-    drainActive = !drainActive;
-    if (dir) {
-        if (watLevelBottom < MAX_WATER_LEVEL) {
-            watLevelBottom++;
-        }
-        if (watLevelTop > 0) {
-            watLevelTop--;
-        }
-    } else {
-        if (watLevelBottom > 0) {
-            watLevelBottom--;
-        }
-        if (watLevelTop < MAX_WATER_LEVEL) {
-            watLevelTop++;
-        }
-    }
-    Draw(DrawMask::M_PUMP | DrawMask::M_DRAIN | DrawMask::M_BOTTOM_WATER |
-         DrawMask::M_TOP_WATER);
 }
 
 void

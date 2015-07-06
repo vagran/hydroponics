@@ -45,6 +45,7 @@ public:
 
     DEF_STR(FlooderStatus_Idle, "Idle")
     DEF_STR(FlooderStatus_Flooding, "Flooding")
+    DEF_STR(FlooderStatus_FloodWait, "Flooding delay")
     DEF_STR(FlooderStatus_FloodFinal, "Flooding final run")
     DEF_STR(FlooderStatus_Draining, "Draining")
     DEF_STR(FlooderStatus_Failure, "Failure")
