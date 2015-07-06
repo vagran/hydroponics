@@ -13,8 +13,6 @@ SleepEnabled();
 
 #define I2C_USE_PULLUP
 
-#define SCHEDULER_MAX_TASKS 16
-
 #include <adk.h>
 
 

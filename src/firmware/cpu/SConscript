@@ -9,7 +9,8 @@ conf = adk.Conf(
     APP_NAME= 'cpu',
     APP_TYPE = 'app',
     PLATFORM = 'avr',
-                
+    DEFS = 'SCHEDULER_MAX_TASKS=16',
+    
     # MCU code name
     MCU = 'atmega328p',
     # Programmer type
