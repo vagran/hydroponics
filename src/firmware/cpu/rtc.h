@@ -19,6 +19,12 @@ public:
 
     struct Time {
         u8 hour, min, sec;
+
+        ::Time
+        GetTime()
+        {
+            return ::Time{hour, min};
+        }
     };
 
     Rtc();

@@ -13,6 +13,8 @@ SleepEnabled();
 
 #define I2C_USE_PULLUP
 
+#define SCHEDULER_MAX_TASKS 16
+
 #include <adk.h>
 
 
@@ -132,11 +134,7 @@ extern Clock clock;
 #define TASK_DELAY_S(__s) \
     ((u16)((u32)(ADK_MCU_FREQ / 256) * (__s) / 1024 ))
 
-/** Time representation. */
-struct Time {
-    u8 hour, min;
-} __PACKED;
-
+#include "time.h"
 #include "variant.h"
 
 #include "strings.h"

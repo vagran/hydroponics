@@ -26,6 +26,9 @@ public:
 
     Flooder();
 
+    void
+    Initialize();
+
     Status
     GetStatus()
     {
@@ -99,16 +102,21 @@ private:
         MIN_START_WATER = 95,
         /** Control polling period. */
         POLL_PERIOD = TASK_DELAY_S(3),
+        /** Polling period for flooding schedule. */
+        SCHEDULE_POLL_PERIOD = TASK_DELAY_S(60)
     };
     u8 status:3,
        errorCode:3,
-       :2;
+       isDaylight:1,
+       :1;
     /** Water level when cycle started. */
     u8 startLevel = 0;
     /** Water level on most recent gauge reading. */
     u8 lastWaterLevel;
     /** Water level when siphon reached. */
     u8 siphonLevel = 0;
+
+    Time lastSunriseTime{0, 0}, lastSunsetTime{0, 0}, lastFloodTime {0, 0};
 
     /** Throttle value to use when pump is on. */
     static u8 EEMEM eePumpThrottle,
@@ -125,6 +133,12 @@ private:
 
     u16
     FloodPoll();
+
+    static u16
+    _SchedulePoll();
+
+    u16
+    SchedulePoll();
 
 } __PACKED;
 

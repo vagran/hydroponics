@@ -445,6 +445,7 @@ main(void)
     display.Clear();
     lvlGauge.Enable();
     light.Enable();
+    flooder.Initialize();
     app.Initialize();
 
     scheduler.Run();
