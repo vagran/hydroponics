@@ -36,6 +36,11 @@ public:
     DEF_STR(LightSensorB, "Light sensor B")
     DEF_STR(FloodingPumpThrottle, "Pump throttle")
     DEF_STR(FloodingPumpBoostThrottle, "Pump boost throttle")
+    DEF_STR(FloodingMinSunriseTime, "Min. sunrise time")
+    DEF_STR(FloodingFirstFloodDelay, "First flood delay")
+    DEF_STR(FloodingFloodDuration, "Flooding duration")
+    DEF_STR(FloodingFloodPeriod, "Flooding period")
+    DEF_STR(FloodingMaxSunsetTime, "Max. sunset time")
     DEF_STR(TimeSetup, "Setup time")
 
     DEF_STR(FlooderStatus_Idle, "Idle")

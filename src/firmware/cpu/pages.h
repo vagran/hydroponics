@@ -68,6 +68,41 @@ namespace SetupFlooding_PumpBoostThrottle {
     Fabric(void *p);
 };
 
+namespace SetupFlooding_MinSunriseTime {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
+namespace SetupFlooding_FirstFloodDelay {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
+namespace SetupFlooding_FloodDuration {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
+namespace SetupFlooding_FloodPeriod {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
+namespace SetupFlooding_MaxSunsetTime {
+    using TPage = TimeSelector;
+
+    void
+    Fabric(void *p);
+};
+
 namespace SetupTime {
     using TPage = TimeSelector;
 

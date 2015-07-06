@@ -235,6 +235,126 @@ Fabric(void *p)
 } /* namespace SetupFlooding_PumpThrottle */
 
 
+namespace SetupFlooding_MinSunriseTime {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        flooder.SetMinSunriseTime(time);
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingMinSunriseTime,
+                               flooder.GetMinSunriseTime());
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_MinSunriseTime */
+
+
+namespace SetupFlooding_FirstFloodDelay {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        flooder.SetFirstFloodDelay(time);
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingFirstFloodDelay,
+                               flooder.GetFirstFloodDelay());
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_FirstFloodDelay */
+
+
+namespace SetupFlooding_FloodDuration {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        flooder.SetFloodDuration(time);
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingFloodDuration,
+                               flooder.GetFloodDuration());
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_FloodDuration */
+
+
+namespace SetupFlooding_FloodPeriod {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        flooder.SetFloodPeriod(time);
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingFloodPeriod,
+                               flooder.GetFloodPeriod());
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_FloodPeriod */
+
+
+namespace SetupFlooding_MaxSunsetTime {
+
+void
+OnClosed(bool accepted)
+{
+    if (accepted) {
+        Time time = static_cast<TimeSelector *>(app.CurPage())->GetValue();
+        flooder.SetMaxSunsetTime(time);
+    }
+    app.SetNextPage(Application::GetPageTypeCode<Menu>(), SetupMenu::Fabric);
+}
+
+void
+Fabric(void *p)
+{
+    TPage *sel = new (p) TPage(strings.FloodingMaxSunsetTime,
+                               flooder.GetMaxSunsetTime());
+    Menu::returnPos = Menu::FindAction(FloodingSetupMenu::actions, Fabric);
+    sel->onClosed = OnClosed;
+}
+
+} /* namespace SetupFlooding_MaxSunsetTime */
+
+
 namespace SetupTime {
 
 void

@@ -114,6 +114,16 @@ const Menu::Action actions[] = {
                                   SetupFlooding_PumpThrottle::Fabric},
     {Application::GetPageTypeCode<SetupFlooding_PumpBoostThrottle::TPage>(),
                                   SetupFlooding_PumpBoostThrottle::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_MinSunriseTime::TPage>(),
+                                  SetupFlooding_MinSunriseTime::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_FirstFloodDelay::TPage>(),
+                                  SetupFlooding_FirstFloodDelay::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_FloodDuration::TPage>(),
+                                  SetupFlooding_FloodDuration::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_FloodPeriod::TPage>(),
+                                  SetupFlooding_FloodPeriod::Fabric},
+    {Application::GetPageTypeCode<SetupFlooding_MaxSunsetTime::TPage>(),
+                                  SetupFlooding_MaxSunsetTime::Fabric},
     MENU_ACTIONS_END
 };
 
