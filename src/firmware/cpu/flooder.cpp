@@ -188,7 +188,8 @@ Flooder::FloodPoll()
     u8 newLevel = lvlGauge.GetValue();
     bool extendedPeriod = false;
     if (status == Status::FLOODING) {
-        if (newLevel < 0x80 &&
+        if (((lastTopVolume == 0 && newLevel < 0xb0) ||
+             (lastTopVolume != 0 && newLevel < startLevel - lastTopVolume / 2)) &&
             ((siphonLevelCandidate == 0 && newLevel >= lastWaterLevel) ||
              (siphonLevelCandidate && newLevel >= siphonLevelCandidate))) {
 
