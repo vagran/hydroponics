@@ -60,6 +60,8 @@ private:
         POT_WALLS_5,
         POT_WALLS_PUMP1,
         POT_WALLS_PUMP2,
+        SUNRISE_ICON,
+        SUNSET_ICON,
         TEMP_ICON,
 
         PUMP,
@@ -67,8 +69,12 @@ private:
         TOP_WATER,
         BOTTOM_WATER,
         STATUS,
+        DAYLIGHT,
         CLOCK,
+        SUNRISE,
+        SUNSET,
         TEMPERATURE,
+        FLOOD_TIME,
         DONE
     };
 
@@ -81,9 +87,14 @@ private:
         M_STATUS =          0x0020,
         M_CLOCK =           0x0040,
         M_TEMPERATURE =     0x0080,
+        M_DAYLIGHT =        0x0100,
+        M_SUNRISE =         0x0200,
+        M_SUNSET =          0x0400,
+        M_FLOOD_TIME =      0x0800,
 
         M_ALL = M_STATIC | M_PUMP | M_DRAIN | M_TOP_WATER | M_BOTTOM_WATER |
-                M_STATUS | M_CLOCK | M_TEMPERATURE
+                M_STATUS | M_CLOCK | M_TEMPERATURE | M_DAYLIGHT | M_SUNRISE |
+                M_SUNSET | M_FLOOD_TIME
     };
 
     u8 drawState:5,
@@ -99,7 +110,9 @@ private:
 
        watLevelBottom:5,
        statusPause:1,
-       reserved:2;
+       isDaylight:1,
+       /** Minute counter for once per minute refreshes. */
+       lastMinute:1;
 
     u16 drawMask;
     const char *status = nullptr;
@@ -152,6 +165,9 @@ private:
 
     void
     GetClockText();
+
+    void
+    GetTimeText(Time t);
 
     void
     GetTemperatureText();

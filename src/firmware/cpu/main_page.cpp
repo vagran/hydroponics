@@ -23,6 +23,7 @@ MainPage::MainPage()
     closeRequested = false;
     pumpActive = false;
     drainActive = false;
+    isDaylight = flooder.IsAmbientDaylight();
 
     flooderStatus = Flooder::Status::IDLE;
     flooderError = 0;
@@ -32,7 +33,7 @@ MainPage::MainPage()
     watLevelBottom = MAX_WATER_LEVEL;
     watLevelTop = 0;
 
-    SetStatus(strings.TestLongStatus);//XXX
+    SetStatus(flooder.GetStatusString());
 }
 
 void
@@ -135,6 +136,16 @@ MainPage::IssueDrawRequest()
                                _DrawHandler);
             return;
 
+        case DrawState::SUNRISE_ICON:
+            bitmapWriter.Write(0, 2, &bitmaps.Sun, false,
+                               _DrawHandler);
+            return;
+
+        case DrawState::SUNSET_ICON:
+            bitmapWriter.Write(9 + 5 * (FONT_WIDTH + 1), 2, &bitmaps.Sunset,
+                               false, _DrawHandler);
+            return;
+
         case DrawState::TEMP_ICON:
             bitmapWriter.Write(0, 1, &bitmaps.Thermometer, false,
                                _DrawHandler);
@@ -188,15 +199,15 @@ MainPage::IssueDrawRequest()
                            _DisplayOutputHandler);
             return;
 
-       case DrawState::STATUS:
+        case DrawState::STATUS:
             if (!(drawMask & DrawMask::M_STATUS)) {
-                drawState = DrawState::CLOCK;
+                drawState = DrawState::DAYLIGHT;
                 break;
             }
             drawMask &= ~DrawMask::M_STATUS;
             if (!status) {
                 display.Clear(Display::Viewport{0, 127, 7, 7});
-                drawState = DrawState::CLOCK;
+                drawState = DrawState::DAYLIGHT;
                 break;
             }
             if (isStatusPgm) {
@@ -210,28 +221,87 @@ MainPage::IssueDrawRequest()
             }
             return;
 
-       case DrawState::CLOCK:
-           if (!(drawMask & DrawMask::M_CLOCK)) {
-               drawState = DrawState::TEMPERATURE;
+        case DrawState::DAYLIGHT:
+            if (!(drawMask & DrawMask::M_DAYLIGHT)) {
+               drawState = DrawState::CLOCK;
                break;
            }
-           drawMask &= ~DrawMask::M_CLOCK;
-           GetClockText();
-           textWriter.Write(Display::Viewport{0, 127, 0, 0},
-                            textBuf, false, true, _DrawHandler);
+           drawMask &= ~DrawMask::M_DAYLIGHT;
+           bitmapWriter.Write(0, 0, flooder.IsAmbientDaylight() ? &bitmaps.Sun :
+                                                                  &bitmaps.Moon,
+                              false, _DrawHandler);
            return;
 
-       case DrawState::TEMPERATURE:
-          if (!(drawMask & DrawMask::M_TEMPERATURE)) {
-              drawState = DrawState::DONE;
-              break;
-          }
-          drawMask &= ~DrawMask::M_TEMPERATURE;
-          GetTemperatureText();
-          textWriter.Write(Display::Viewport{7, POT_COL - 2, 1, 1},
-                           textBuf, false, true, _DrawHandler);
-          return;
+        case DrawState::CLOCK:
+            if (!(drawMask & DrawMask::M_CLOCK)) {
+                drawState = DrawState::SUNRISE;
+                break;
+            }
+            drawMask &= ~DrawMask::M_CLOCK;
+            GetClockText();
+            textWriter.Write(Display::Viewport{12, 12 + (FONT_WIDTH + 1) * 8 - 1, 0, 0},
+                             textBuf, false, true, _DrawHandler);
+            return;
 
+        case DrawState::SUNRISE:
+            if (!(drawMask & DrawMask::M_SUNRISE)) {
+                drawState = DrawState::SUNSET;
+                break;
+            }
+            drawMask &= ~DrawMask::M_SUNRISE;
+            GetTimeText(flooder.GetLastSunriseTime());
+            textWriter.Write(Display::Viewport{9, 9 + 5 * (FONT_WIDTH + 1) - 1,
+                                               2, 2},
+                             textBuf, false, true, _DrawHandler);
+            return;
+
+        case DrawState::SUNSET: {
+            if (!(drawMask & DrawMask::M_SUNSET)) {
+                drawState = DrawState::TEMPERATURE;
+                break;
+            }
+            drawMask &= ~DrawMask::M_SUNSET;
+            GetTimeText(flooder.GetLastSunsetTime());
+            u8 x1 = 9 + 5 * (FONT_WIDTH + 1) + 9;
+            u8 x2 = x1 + 5 * (FONT_WIDTH + 1) - 1;
+            textWriter.Write(Display::Viewport{x1, x2, 2, 2},
+                             textBuf, false, true, _DrawHandler);
+            return;
+        }
+
+        case DrawState::TEMPERATURE:
+            if (!(drawMask & DrawMask::M_TEMPERATURE)) {
+                drawState = DrawState::FLOOD_TIME;
+                break;
+            }
+            drawMask &= ~DrawMask::M_TEMPERATURE;
+            GetTemperatureText();
+            textWriter.Write(Display::Viewport{7, POT_COL - 2, 1, 1},
+                             textBuf, false, true, _DrawHandler);
+            return;
+
+
+        case DrawState::FLOOD_TIME: {
+            if (!(drawMask & DrawMask::M_FLOOD_TIME)) {
+                drawState = DrawState::DONE;
+                break;
+            }
+            drawMask &= ~DrawMask::M_FLOOD_TIME;
+            Time t = flooder.GetNextFloodTime();
+            if (t) {
+                GetTimeText(t - rtc.GetTime().GetTime());
+            } else {
+                textBuf[0] = '-';
+                textBuf[1] = '-';
+                textBuf[2] = ':';
+                textBuf[3] = '-';
+                textBuf[4] = '-';
+                textBuf[5] = 0;
+            }
+            textWriter.Write(Display::Viewport{128 - (FONT_WIDTH + 1) * 5, 127, 0, 0},
+                             textBuf, false, true, _DrawHandler);
+            return;
+        }
         default:
             break;
         }
@@ -407,7 +477,7 @@ MainPage::CheckFlooderStatus()
 
         if (drainActive) {
             drainActive = false;
-            drawMask |= DrawMask::M_DRAIN;
+            drawMask |= DrawMask::M_DRAIN | DrawMask::M_FLOOD_TIME;
         }
     } else {
         drainActive = !drainActive;
@@ -426,6 +496,18 @@ MainPage::CheckFlooderStatus()
     if (level != watLevelTop) {
         watLevelTop = level;
         drawMask |= DrawMask::M_TOP_WATER;
+    }
+
+    u8 dl = flooder.IsAmbientDaylight() ? 1 : 0;
+    if (dl != isDaylight) {
+        isDaylight = dl;
+        drawMask |= DrawMask::M_DAYLIGHT | DrawMask::M_SUNRISE | DrawMask::M_SUNSET;
+    }
+
+    Time curTime = rtc.GetTime().GetTime();
+    if ((curTime.min & 1) != lastMinute) {
+        lastMinute = curTime.min & 1;
+        drawMask |= DrawMask::M_FLOOD_TIME;
     }
 }
 
@@ -481,6 +563,14 @@ MainPage::GetClockText()
     Strings::StrClockNum(time.min, textBuf + 3);
     textBuf[5] = ':';
     Strings::StrClockNum(time.sec, textBuf + 6);
+}
+
+void
+MainPage::GetTimeText(Time t)
+{
+    Strings::StrClockNum(t.hour, textBuf);
+    textBuf[2] = ':';
+    Strings::StrClockNum(t.min, textBuf + 3);
 }
 
 void

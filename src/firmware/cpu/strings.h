@@ -100,7 +100,6 @@ public:
             "Flood period\0"
             "Max. sunset time\0")
 
-    DEF_STR(TestLongStatus, "This is very very long test status string.")
 } __PACKED;
 
 extern const Strings strings PROGMEM;

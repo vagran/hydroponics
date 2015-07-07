@@ -97,6 +97,38 @@ public:
     void
     SetMaxSunsetTime(Time t);
 
+    Time
+    GetLastSunriseTime()
+    {
+        return lastSunriseTime;
+    }
+
+    Time
+    GetLastSunsetTime()
+    {
+        return lastSunsetTime;
+    }
+
+    /** Is currently daylight time according to ambient light sensors. */
+    bool
+    IsAmbientDaylight()
+    {
+        return isAmbientDaylight;
+    }
+
+    /** Is currently daylight time (possibly extended by lighting). */
+    bool
+    IsDaylight()
+    {
+        return isDaylight;
+    }
+
+    /** Get next flooding time. Return 00:00 if no more flooding until next
+     * sunrise.
+     */
+    Time
+    GetNextFloodTime();
+
 private:
     enum {
         /** Minimal water level to start flooding, in percents. */
@@ -112,7 +144,8 @@ private:
        floodWaitDone:1,
 
        siphonReached:1,
-       :7;
+       isAmbientDaylight:1,
+       :6;
     /** Water level when cycle started. */
     u8 startLevel = 0;
     /** Water level on most recent gauge reading. */

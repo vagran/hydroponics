@@ -29,6 +29,7 @@ Flooder::Flooder()
 void
 Flooder::Initialize()
 {
+    SchedulePoll();
     scheduler.ScheduleTask(_SchedulePoll, SCHEDULE_POLL_PERIOD);
 }
 
@@ -249,6 +250,7 @@ Flooder::FloodPoll()
         if (newLevel >= startLevel - 0x18) {
             status = Status::IDLE;
             lastWaterLevel = newLevel;
+            lastFloodTime = rtc.GetTime().GetTime();
             return 0;
         }
     } else {
@@ -275,6 +277,7 @@ Flooder::SchedulePoll()
         Time minSunriseTime = GetMinSunriseTime();
         if (curTime >= minSunriseTime) {
             isDaylight = true;
+            isAmbientDaylight = true;
             lastSunriseTime = curTime;
         }
     }
@@ -285,12 +288,19 @@ Flooder::SchedulePoll()
         Time maxSunsetTime = GetMaxSunsetTime();
         if (curTime >= maxSunsetTime) {
             isDaylight = false;
+            isAmbientDaylight = false;
             lastSunsetTime = curTime;
             lastFloodTime = Time{0, 0};
         }
     }
 
-    //XXX
+    if (status == Status::IDLE) {
+        Time floodTime = GetNextFloodTime();
+        if (floodTime && floodTime <= curTime) {
+            StartFlooding();
+        }
+    }
+
     return SCHEDULE_POLL_PERIOD;
 }
 
@@ -298,6 +308,22 @@ u16
 Flooder::_SchedulePoll()
 {
     return flooder.SchedulePoll();
+}
+
+Time
+Flooder::GetNextFloodTime()
+{
+    if (!isDaylight) {
+        return Time{0, 0};
+    }
+    if (!lastFloodTime) {
+        return lastSunriseTime + GetFirstFloodDelay();
+    }
+    Time t = lastFloodTime + GetFloodPeriod();
+    if (t > GetMaxSunsetTime()) {
+        return Time{0, 0};
+    }
+    return t;
 }
 
 u8
