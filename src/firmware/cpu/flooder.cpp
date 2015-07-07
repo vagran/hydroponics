@@ -150,6 +150,9 @@ Flooder::StartFlooding()
     }
     status = Status::FLOODING;
     startLevel = lastWaterLevel;
+    floodWaitDone = false;
+    siphonReached = false;
+    siphonLevelCandidate = 0;
     pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
     scheduler.ScheduleTask(_FloodPoll, POLL_PERIOD);
 }
@@ -182,32 +185,68 @@ u16
 Flooder::FloodPoll()
 {
     u8 newLevel = lvlGauge.GetValue();
+    bool extendedPeriod = false;
     if (status == Status::FLOODING) {
-        if (newLevel < 0x80 && newLevel >= lastWaterLevel) {
-            siphonLevel = lastWaterLevel;
-            lastTopVolume = startLevel - siphonLevel;
+        if (newLevel < 0x80 &&
+            ((siphonLevelCandidate == 0 && newLevel >= lastWaterLevel) ||
+             (siphonLevelCandidate && newLevel >= siphonLevelCandidate))) {
+
+            if (!siphonLevelCandidate) {
+                siphonLevelCandidate = lastWaterLevel;
+            } else {
+                siphonReached = true;
+                siphonLevel = siphonLevelCandidate;
+                lastTopVolume = startLevel - siphonLevel;
+                if (floodWaitDone) {
+                    status = Status::FLOOD_FINAL;
+                    pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+                } else {
+                    status = Status::FLOOD_WAIT;
+                    floodWaitDone = true;
+                    pump.SetLevel(0);
+                    floodDelayTime = rtc.GetTime().GetTime();
+                }
+            }
+        } else {
+            siphonLevelCandidate = 0;
+        }
+
+        if (!floodWaitDone && siphonLevel != 0 &&
+            newLevel <= siphonLevel + 0x10) {
+
             status = Status::FLOOD_WAIT;
+            floodWaitDone = true;
             pump.SetLevel(0);
             floodDelayTime = rtc.GetTime().GetTime();
         }
     } else if (status == Status::FLOOD_WAIT) {
-        if (newLevel > siphonLevel + 0x18) {
+        if ((siphonReached && newLevel > siphonLevel + 0x18) ||
+            (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 2) ||
+            (newLevel >= 0xa0)) {
+
             status = Status::DRAINING;
         } else {
             Time curTime = rtc.GetTime().GetTime();
             Time delay = GetFloodDuration();
             if (curTime >= floodDelayTime + delay) {
-                status = Status::FLOOD_FINAL;
-                pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+                if (siphonReached) {
+                    status = Status::FLOOD_FINAL;
+                    pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+                } else {
+                    status = Status::FLOODING;
+                    pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
+                }
+                /* More time to spin up pump. */
+                extendedPeriod = true;
             }
         }
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel > siphonLevel + 0x18) {
+        if (newLevel >= siphonLevel + 0x18) {
             status = Status::DRAINING;
             pump.SetLevel(0);
         }
     } else if (status == Status::DRAINING) {
-        if (newLevel > startLevel - 0x20) {
+        if (newLevel >= startLevel - 0x18) {
             status = Status::IDLE;
             lastWaterLevel = newLevel;
             return 0;
@@ -216,7 +255,7 @@ Flooder::FloodPoll()
         return 0;
     }
     lastWaterLevel = newLevel;
-    return POLL_PERIOD;
+    return extendedPeriod ? POLL_PERIOD * 2 : POLL_PERIOD;
 }
 
 u16

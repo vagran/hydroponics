@@ -109,7 +109,10 @@ private:
     u8 status:3,
        errorCode:3,
        isDaylight:1,
-       :1;
+       floodWaitDone:1,
+
+       siphonReached:1,
+       :7;
     /** Water level when cycle started. */
     u8 startLevel = 0;
     /** Water level on most recent gauge reading. */
@@ -118,6 +121,7 @@ private:
     u8 siphonLevel = 0;
     /** Last volume counted for top pot flooding. */
     u8 lastTopVolume = 0;
+    u8 siphonLevelCandidate = 0;
 
     Time lastSunriseTime{0, 0}, lastSunsetTime{0, 0}, lastFloodTime {0, 0},
          floodDelayTime;
