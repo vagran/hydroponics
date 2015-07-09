@@ -145,7 +145,9 @@ private:
 
        siphonReached:1,
        isAmbientDaylight:1,
-       :6;
+       sunsetSeen:1,
+       dayOfWeek:3,
+       :2;
     /** Water level when cycle started. */
     u8 startLevel = 0;
     /** Water level on most recent gauge reading. */

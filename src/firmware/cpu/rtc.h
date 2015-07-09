@@ -56,6 +56,9 @@ public:
     i16
     GetTemperature();
 
+    u8
+    GetDayOfWeek();
+
 private:
     /** Image of the chip registers. */
     struct Registers {

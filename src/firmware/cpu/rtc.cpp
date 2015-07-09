@@ -228,6 +228,12 @@ Rtc::SetTime(Time time)
     writeMask |= (1 << 0x00) | (1 << 0x01) | (1 << 0x02);
 }
 
+u8
+Rtc::GetDayOfWeek()
+{
+    return regs.dow;
+}
+
 void
 Rtc::Update()
 {

@@ -23,6 +23,8 @@ Time EEMEM Flooder::eeMinSunriseTime {7, 0},
 Flooder::Flooder()
 {
     isDaylight = false;
+    sunsetSeen = false;
+    dayOfWeek = rtc.GetDayOfWeek();
     status = Status::IDLE;
 }
 
@@ -271,9 +273,14 @@ u16
 Flooder::SchedulePoll()
 {
     Time curTime = rtc.GetTime().GetTime();
+    u8 newDow = rtc.GetDayOfWeek();
+    if (newDow != dayOfWeek) {
+        dayOfWeek = newDow;
+        sunsetSeen = false;
+    }
 
     /* Detect sunrise. */
-    if (!isDaylight) {
+    if (!isDaylight && !sunsetSeen) {
         //XXX use light sensors
         Time minSunriseTime = GetMinSunriseTime();
         if (curTime >= minSunriseTime) {
@@ -290,6 +297,7 @@ Flooder::SchedulePoll()
         if (curTime >= maxSunsetTime) {
             isDaylight = false;
             isAmbientDaylight = false;
+            sunsetSeen = true;
             lastSunsetTime = curTime;
             lastFloodTime = Time{0, 0};
         }
