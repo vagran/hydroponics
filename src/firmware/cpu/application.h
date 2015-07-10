@@ -118,8 +118,13 @@ private:
             LinearValueSelector,
             TimeSelector> curPage;
 
+    enum {
+        TICK_INTERVAL = TASK_DELAY_S(60),
+        DISPLAY_SLEEP_DELAY = 5
+    };
+
     u8 nextPageTypeCode: 5,
-       reserved:3;
+       idleCounter:3;
     /** Next page fabric if next page pending. */
     VariantFabric nextPage = nullptr;
 

@@ -61,6 +61,19 @@ public:
     void
     Clear(Viewport vp);
 
+    /** Set display sleep state.
+     *
+     * @param f Sleep when true, wake up when false.
+     */
+    void
+    SetSleep(bool f);
+
+    bool
+    IsSleeping()
+    {
+        return isSleeping;
+    }
+
 private:
     enum {
         /** Maximal number of bytes in a command. Long commands (scrolling setup)
@@ -169,7 +182,9 @@ private:
        outReqComplete:1,
 
    /** Output request execution is in progress. */
-       outInProgress:1;
+       outInProgress:1,
+       isSleeping:1,
+       :6;
     OutputReq outQueue[MAX_OUT_REQS];
     /** Currently active viewport. */
     Viewport curVp;

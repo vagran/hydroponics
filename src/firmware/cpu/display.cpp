@@ -15,12 +15,26 @@ Display display;
 void
 Display::Initialize()
 {
+    isSleeping = false;
     curVp.maxCol = 127;
     curVp.maxPage = 7;
     curColumn = curVp.minCol;
     curPage = curVp.minPage;
     state = State::INITIALIZING;
     HandleInitialization();
+}
+
+void
+Display::SetSleep(bool f)
+{
+    AtomicSection as;
+    if (f && !isSleeping) {
+        isSleeping = true;
+        SendCommand(Command::DISPLAY_OFF);
+    } else if (!f && isSleeping) {
+        isSleeping = false;
+        SendCommand(Command::DISPLAY_ON);
+    }
 }
 
 void

@@ -31,7 +31,7 @@ void
 Application::Initialize()
 {
     sound.SetPattern(0xffff, false);
-    scheduler.ScheduleTask(_Tick, TASK_DELAY_S(1));
+    scheduler.ScheduleTask(_Tick, TICK_INTERVAL);
 }
 
 void
@@ -61,6 +61,11 @@ Application::Poll()
 void
 Application::OnButtonPressed()
 {
+    if (display.IsSleeping()) {
+        display.SetSleep(false);
+    }
+    idleCounter = 0;
+
     Page *page = CurPage();
     if (page) {
         page->OnButtonPressed();
@@ -79,6 +84,11 @@ Application::OnButtonLongPressed()
 void
 Application::OnRotEncClick(bool dir)
 {
+    if (display.IsSleeping()) {
+        display.SetSleep(false);
+    }
+    idleCounter = 0;
+
     Page *page = CurPage();
     if (page) {
         page->OnRotEncClick(dir);
@@ -101,7 +111,10 @@ Application::_Tick()
 u16
 Application::Tick()
 {
-    rtc.Update();
-    //XXX
-    return TASK_DELAY_S(60);
+    if (idleCounter < DISPLAY_SLEEP_DELAY) {
+        idleCounter++;
+    } else if (!display.IsSleeping()) {
+        display.SetSleep(true);
+    }
+    return TICK_INTERVAL;
 }
