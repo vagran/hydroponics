@@ -61,10 +61,11 @@ Application::Poll()
 void
 Application::OnButtonPressed()
 {
+    idleCounter = 0;
     if (display.IsSleeping()) {
         display.SetSleep(false);
+        return;
     }
-    idleCounter = 0;
 
     Page *page = CurPage();
     if (page) {
@@ -84,10 +85,11 @@ Application::OnButtonLongPressed()
 void
 Application::OnRotEncClick(bool dir)
 {
+    idleCounter = 0;
     if (display.IsSleeping()) {
         display.SetSleep(false);
+        return;
     }
-    idleCounter = 0;
 
     Page *page = CurPage();
     if (page) {
