@@ -215,18 +215,18 @@ Flooder::FloodPoll()
             siphonLevelCandidate = 0;
         }
 
-        if (!floodWaitDone && siphonLevel != 0 &&
-            newLevel <= siphonLevel + 0x10) {
+        if (!floodWaitDone && lastTopVolume != 0 &&
+            newLevel <= startLevel - (static_cast<u16>(lastTopVolume) * 15 / 16)) {
 
             status = Status::FLOOD_WAIT;
             floodWaitDone = true;
             pump.SetLevel(0);
             floodDelayTime = rtc.GetTime().GetTime();
         }
+
     } else if (status == Status::FLOOD_WAIT) {
-        if ((siphonReached && newLevel > siphonLevel + 0x18) ||
-            (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 2) ||
-            (newLevel >= 0xa0)) {
+        if ((siphonReached && newLevel > siphonLevel + lastTopVolume / 4) ||
+            (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 2)) {
 
             status = Status::DRAINING;
         } else {
@@ -244,21 +244,27 @@ Flooder::FloodPoll()
                 extendedPeriod = true;
             }
         }
+
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel >= siphonLevel + 0x18) {
+        if (newLevel >= siphonLevel + lastTopVolume / 3) {
             status = Status::DRAINING;
             pump.SetLevel(0);
         }
+
     } else if (status == Status::DRAINING) {
-        if (newLevel >= startLevel - 0x18) {
+        if ((lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 8) ||
+            (lastTopVolume == 0 && newLevel >= startLevel - 0x18)) {
+
             status = Status::IDLE;
             lastWaterLevel = newLevel;
             lastFloodTime = rtc.GetTime().GetTime();
             return 0;
         }
+
     } else {
         return 0;
     }
+
     lastWaterLevel = newLevel;
     return extendedPeriod ? POLL_PERIOD * 2 : POLL_PERIOD;
 }
@@ -343,6 +349,9 @@ Flooder::GetTopPotWaterLevel()
     }
     if (lastTopVolume == 0) {
         return 0xff - lastWaterLevel;
+    }
+    if (lastWaterLevel <= startLevel - lastTopVolume) {
+        return 0xff;
     }
     u16 inv =
         static_cast<u16>(lastWaterLevel - (startLevel - lastTopVolume)) * 0xff /
