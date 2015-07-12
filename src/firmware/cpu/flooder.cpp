@@ -293,6 +293,7 @@ Flooder::SchedulePoll()
             isDaylight = true;
             isAmbientDaylight = true;
             lastSunriseTime = curTime;
+            lastFloodTime = Time{0, 0};
         }
     }
 
