@@ -225,7 +225,7 @@ Flooder::FloodPoll()
         }
 
     } else if (status == Status::FLOOD_WAIT) {
-        if ((siphonReached && newLevel > siphonLevel + lastTopVolume / 4) ||
+        if ((siphonReached && newLevel > siphonLevel + lastTopVolume / 3) ||
             (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 2)) {
 
             status = Status::DRAINING;
