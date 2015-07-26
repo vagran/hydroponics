@@ -225,9 +225,7 @@ Flooder::FloodPoll()
         }
 
     } else if (status == Status::FLOOD_WAIT) {
-        if ((siphonReached && newLevel > siphonLevel + lastTopVolume / 3) ||
-            (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 2)) {
-
+        if (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 4) {
             status = Status::DRAINING;
         } else {
             Time curTime = rtc.GetTime().GetTime();
@@ -246,7 +244,9 @@ Flooder::FloodPoll()
         }
 
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel >= siphonLevel + lastTopVolume / 3) {
+        if (newLevel > lastWaterLevel &&
+            newLevel >= siphonLevel + lastTopVolume / 3) {
+
             status = Status::DRAINING;
             pump.SetLevel(0);
         }
