@@ -134,7 +134,7 @@ private:
         /** Minimal water level to start flooding, in percents. */
         MIN_START_WATER = 95,
         /** Control polling period. */
-        POLL_PERIOD = TASK_DELAY_S(3),
+        POLL_PERIOD = TASK_DELAY_S(2),
         /** Polling period for flooding schedule. */
         SCHEDULE_POLL_PERIOD = TASK_DELAY_S(60)
     };
@@ -147,7 +147,9 @@ private:
        isAmbientDaylight:1,
        sunsetSeen:1,
        dayOfWeek:3,
-       :2;
+       /** Extended delay when changing pump mode. */
+       extendedPollDelay:1,
+       :1;
     /** Water level when cycle started. */
     u8 startLevel = 0;
     /** Water level on most recent gauge reading. */
@@ -156,7 +158,12 @@ private:
     u8 siphonLevel = 0;
     /** Last volume counted for top pot flooding. */
     u8 lastTopVolume = 0;
-    u8 siphonLevelCandidate = 0;
+    /** Minimal level seen during various flooding stages. */
+    u8 minLevel;
+    u8 minLevelUpdated = 0, minLevelStayed = 0;
+    /** Maximal level seen during various flooding stages. */
+    u8 maxLevel;
+    u8 maxLevelUpdated = 0, maxLevelStayed = 0;
 
     Time lastSunriseTime{0, 0}, lastSunsetTime{0, 0}, lastFloodTime {0, 0},
          floodDelayTime;

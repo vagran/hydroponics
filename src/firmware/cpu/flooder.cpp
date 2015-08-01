@@ -155,7 +155,15 @@ Flooder::StartFlooding()
     startLevel = lastWaterLevel;
     floodWaitDone = false;
     siphonReached = false;
-    siphonLevelCandidate = 0;
+    extendedPollDelay = true;
+
+    minLevel = startLevel;
+    minLevelUpdated = 0;
+    minLevelStayed = 0;
+    maxLevel = startLevel;
+    maxLevelUpdated = 0;
+    maxLevelStayed = 0;
+
     pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
     scheduler.ScheduleTask(_FloodPoll, POLL_PERIOD);
 }
@@ -188,31 +196,55 @@ u16
 Flooder::FloodPoll()
 {
     u8 newLevel = lvlGauge.GetValue();
-    bool extendedPeriod = false;
-    if (status == Status::FLOODING) {
-        if (((lastTopVolume == 0 && newLevel < 0xb0) ||
-             (lastTopVolume != 0 && newLevel < startLevel - lastTopVolume / 2)) &&
-            ((siphonLevelCandidate == 0 && newLevel >= lastWaterLevel) ||
-             (siphonLevelCandidate && newLevel >= siphonLevelCandidate))) {
 
-            if (!siphonLevelCandidate) {
-                siphonLevelCandidate = lastWaterLevel;
+    if (newLevel < minLevel) {
+        minLevel = newLevel;
+        if (minLevelUpdated < 0xff) {
+            minLevelUpdated++;
+        }
+        minLevelStayed = 0;
+    } else {
+        if (minLevelStayed < 0xff) {
+            minLevelStayed++;
+        }
+        minLevelUpdated = 0;
+    }
+
+    if (newLevel > maxLevel) {
+        maxLevel = newLevel;
+        if (maxLevelUpdated < 0xff) {
+            maxLevelUpdated++;
+        }
+        maxLevelStayed = 0;
+    } else {
+        if (maxLevelStayed < 0xff) {
+            maxLevelStayed++;
+        }
+        maxLevelUpdated = 0;
+    }
+
+    if (status == Status::FLOODING) {
+
+        if (minLevelStayed > 5 &&
+            ((lastTopVolume != 0 && newLevel < startLevel - lastTopVolume / 3) ||
+             (newLevel < startLevel - 0x10))) {
+
+            siphonReached = true;
+            siphonLevel = minLevel;
+            lastTopVolume = startLevel - siphonLevel;
+            if (floodWaitDone) {
+                status = Status::FLOOD_FINAL;
+                minLevel = newLevel;
+                minLevelUpdated = 0;
+                minLevelStayed = 0;
+                extendedPollDelay = true;
+                pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
             } else {
-                siphonReached = true;
-                siphonLevel = siphonLevelCandidate;
-                lastTopVolume = startLevel - siphonLevel;
-                if (floodWaitDone) {
-                    status = Status::FLOOD_FINAL;
-                    pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
-                } else {
-                    status = Status::FLOOD_WAIT;
-                    floodWaitDone = true;
-                    pump.SetLevel(0);
-                    floodDelayTime = rtc.GetTime().GetTime();
-                }
+                status = Status::FLOOD_WAIT;
+                floodWaitDone = true;
+                pump.SetLevel(0);
+                floodDelayTime = rtc.GetTime().GetTime();
             }
-        } else {
-            siphonLevelCandidate = 0;
         }
 
         if (!floodWaitDone && lastTopVolume != 0 &&
@@ -225,36 +257,36 @@ Flooder::FloodPoll()
         }
 
     } else if (status == Status::FLOOD_WAIT) {
-        if (lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 4) {
-            status = Status::DRAINING;
-        } else {
-            Time curTime = rtc.GetTime().GetTime();
-            Time delay = GetFloodDuration();
-            if (curTime >= floodDelayTime + delay) {
-                if (siphonReached) {
-                    status = Status::FLOOD_FINAL;
-                    pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
-                } else {
-                    status = Status::FLOODING;
-                    pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
-                }
-                /* More time to spin up pump. */
-                extendedPeriod = true;
+
+        Time curTime = rtc.GetTime().GetTime();
+        Time delay = GetFloodDuration();
+        if (curTime >= floodDelayTime + delay) {
+            minLevel = newLevel;
+            minLevelUpdated = 0;
+            minLevelStayed = 0;
+            extendedPollDelay = true;
+            if (siphonReached) {
+                status = Status::FLOOD_FINAL;
+                pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
+            } else {
+                status = Status::FLOODING;
+                pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
             }
         }
 
     } else if (status == Status::FLOOD_FINAL) {
-        if (newLevel > lastWaterLevel &&
-            newLevel >= siphonLevel + lastTopVolume / 3) {
 
+        if (newLevel > minLevel + lastTopVolume / 5) {
             status = Status::DRAINING;
+            maxLevel = newLevel;
+            maxLevelStayed = 0;
+            maxLevelUpdated = 0;
             pump.SetLevel(0);
         }
 
     } else if (status == Status::DRAINING) {
-        if ((lastTopVolume != 0 && newLevel >= startLevel - lastTopVolume / 8) ||
-            (lastTopVolume == 0 && newLevel >= startLevel - 0x18)) {
 
+        if (maxLevelStayed > 3) {
             status = Status::IDLE;
             lastWaterLevel = newLevel;
             lastFloodTime = rtc.GetTime().GetTime();
@@ -266,7 +298,11 @@ Flooder::FloodPoll()
     }
 
     lastWaterLevel = newLevel;
-    return extendedPeriod ? POLL_PERIOD * 2 : POLL_PERIOD;
+    if (extendedPollDelay) {
+        extendedPollDelay = false;
+        return POLL_PERIOD * 3;
+    }
+    return POLL_PERIOD;
 }
 
 u16
