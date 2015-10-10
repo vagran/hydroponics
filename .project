@@ -3,6 +3,7 @@
 	<name>hydroponics</name>
 	<comment></comment>
 	<projects>
+		<project>ADK</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
