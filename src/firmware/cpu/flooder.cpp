@@ -265,13 +265,8 @@ Flooder::FloodPoll()
             minLevelUpdated = 0;
             minLevelStayed = 0;
             extendedPollDelay = true;
-            if (siphonReached) {
-                status = Status::FLOOD_FINAL;
-                pump.SetLevel(eeprom_read_byte(&eePumpBoostThrottle));
-            } else {
-                status = Status::FLOODING;
-                pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
-            }
+            status = Status::FLOODING;
+            pump.SetLevel(eeprom_read_byte(&eePumpThrottle));
         }
 
     } else if (status == Status::FLOOD_FINAL) {
