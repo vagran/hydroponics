@@ -25,6 +25,6 @@ conf = adk.Conf(
     # Preserve EEPROM on erase.
     MCU_HFUSE = 0b11010111,
     # BOD level 4.3V
-    MCU_EFUSE = 0b00000100
+    MCU_EFUSE = 0b11111100
 
     ).Build()
