@@ -6,11 +6,6 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-bool
-SleepEnabled();
-
-#define SCHEDULER_CHECK_SLEEPING_ALLOWED SleepEnabled
-
 #define I2C_USE_PULLUP
 
 #include <adk.h>

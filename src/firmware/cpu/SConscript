@@ -9,7 +9,7 @@ conf = adk.Conf(
     APP_NAME= 'cpu',
     APP_TYPE = 'app',
     PLATFORM = 'avr',
-    DEFS = 'SCHEDULER_MAX_TASKS=16',
+    DEFS = 'SCHEDULER_MAX_TASKS=16 SCHEDULER_CHECK_SLEEPING_ALLOWED=SleepEnabled',
     
     # MCU code name
     MCU = 'atmega328p',
