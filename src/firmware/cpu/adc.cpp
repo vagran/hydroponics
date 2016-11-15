@@ -82,7 +82,7 @@ Adc::NextConversion()
         if (channel >= NUM_CHANNELS) {
             channel = 0;
         }
-        u8 mask = 1 << channel;
+        u16 mask = 1 << channel;
         if (pendingChannelsMask & mask) {
             pendingChannelsMask &= ~mask;
             curChannel = channel;
